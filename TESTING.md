@@ -95,7 +95,7 @@ cd backend
 .\.venv\Scripts\python.exe -m pytest
 ```
 
-V1候选版本发布前，在仓库根目录执行统一自动入口：
+V1候选或正式版本发布前，在仓库根目录执行统一自动入口：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\verify_release.ps1

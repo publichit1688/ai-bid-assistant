@@ -38,4 +38,4 @@ finally {
     Pop-Location
 }
 
-Write-Host "V1 candidate automated release checks passed."
+Write-Host "V1 automated release checks passed."
