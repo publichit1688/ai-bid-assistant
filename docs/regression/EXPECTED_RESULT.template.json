@@ -1,0 +1,51 @@
+{
+  "template_version": "1.0",
+  "sample_id": "RB-REPLACE-ME",
+  "authorization": {
+    "status": "待确认",
+    "confirmed_by_role": null,
+    "confirmed_date": null,
+    "allowed_scope": "仅限本机隔离回归"
+  },
+  "document": {
+    "format": "PDF_OR_DOCX",
+    "text_mode": "TEXT_OR_SCAN",
+    "page_count": null,
+    "page_count_tolerance": 0
+  },
+  "expected_project": {
+    "project_name": null,
+    "tender_company": null,
+    "deadline": null,
+    "deposit": null
+  },
+  "expected_summary": {
+    "score": null,
+    "score_level": null,
+    "risk_count": null,
+    "high_count": null,
+    "middle_count": null,
+    "low_count": null,
+    "total_deduction": null
+  },
+  "expected_risks": [
+    {
+      "case_id": "RISK-001",
+      "level": null,
+      "category": null,
+      "page": null,
+      "page_tolerance": 0,
+      "required_keywords": [],
+      "forbidden_claims": [],
+      "expected_deduction": null
+    }
+  ],
+  "expected_ui": {
+    "pdf_preview": "待验证",
+    "risk_highlight": "待验证",
+    "dashboard_penetration": "待验证",
+    "report_export": "待验证"
+  },
+  "expected_failure": null,
+  "known_limitations": []
+}

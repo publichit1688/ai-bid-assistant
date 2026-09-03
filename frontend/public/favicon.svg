@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">AI标书助手</title>
+  <defs>
+    <linearGradient id="brand" x1="8" y1="6" x2="56" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4096ff" />
+      <stop offset="1" stop-color="#0958d9" />
+    </linearGradient>
+  </defs>
+  <rect x="5" y="5" width="54" height="54" rx="14" fill="url(#brand)" />
+  <path d="M20 44 29.5 19h5L44 44h-6l-1.8-5.3H27.8L26 44h-6Zm9.5-10.4h5L32 26.1l-2.5 7.5Z" fill="#fff" />
+  <rect x="46" y="19" width="4" height="25" rx="2" fill="#fff" />
+</svg>

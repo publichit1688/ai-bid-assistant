@@ -1,0 +1,25 @@
+[Unit]
+Description=AI Bid Assistant API
+After=network.target
+
+[Service]
+Type=simple
+User=ai-bid
+Group=ai-bid
+WorkingDirectory=/opt/ai-bid-assistant/backend
+EnvironmentFile=/etc/ai-bid-assistant/backend.env
+ExecStartPre=/opt/ai-bid-assistant/backend/.venv/bin/python scripts/start_production.py --check
+ExecStart=/opt/ai-bid-assistant/backend/.venv/bin/python scripts/start_production.py
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+KillSignal=SIGINT
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/ai-bid-assistant
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

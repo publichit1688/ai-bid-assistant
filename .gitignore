@@ -49,6 +49,9 @@ coverage.xml
 *.py.cover
 .hypothesis/
 .pytest_cache/
+.pytest-tmp*/
+.pytest-release*/
+.pytest-pip-audit-cache*/
 cover/
 
 # Translations
@@ -149,6 +152,8 @@ activemq-data/
 
 # Environments
 .env
+.env.*
+!.env.example
 .envrc
 .venv
 env/
@@ -208,6 +213,18 @@ tempCodeRunnerFile.py
 
 # PyPI configuration file
 .pypirc
+
+# AI bid assistant local data and generated artifacts
+backend/bid.db
+backend/bid.db-*
+backend/uploads/
+backend/reports/
+backend/*.docx
+backend/*.pdf
+frontend/node_modules/
+regression_samples/
+docs/regression/*.local.json
+docs/regression/*.local.csv
 
 # Marimo
 marimo/_static/

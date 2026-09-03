@@ -1,0 +1,8 @@
+sample_id,authorization_status,execution_status,source_format,text_mode,size_class,table_complexity,expected_coverage,contains_personal_data,notes
+RB-PDF-TEXT-SHORT,已确认,格式与定位回归通过,PDF,可复制文本,短文档,简单,基础字段及风险定位,未知,已授权现有文件的脱敏编号且原件不入Git
+RB-PDF-TEXT-LONG,已确认,格式与定位回归通过,PDF,可复制文本,长文档,中等,长文档截断及后页风险,未知,已授权现有文件的脱敏编号且原件不入Git
+RB-PDF-SCAN,已确认,格式与定位回归通过,PDF,图文混合且含可提取文本,中等,简单,混合图文解析及明确提示,未知,每页含图像但仍有可提取文本且不能代表纯扫描件
+RB-PDF-TABLE,已确认,格式与定位回归通过,PDF,可复制文本,短文档,中等,合并单元格表格字段及采购项,未知,4项采购清单和20个字段均可回溯原文；6/6风险定位及报告通过
+RB-DOCX-TEXT,已确认,格式与定位回归通过,DOCX,可复制文本,长文档,中等,DOCX真实版式转换及字段提取,未知,WPS转换61页；6/6页码与高亮通过，报告一致性通过
+RB-PDF-SCAN-PURE,已确认,部分通过,PDF,纯扫描无文字层,中等,无,OCR页码及坐标高亮,未知,16页OCR成功且30个框对齐；6/7风险有框，另1项无可靠原文匹配时保守不画框
+RB-INVALID-FILE,已确认,格式回归通过,异常文件,不可解析,短文档,无,错误提示及零残留事务,否,人工构造损坏PDF/DOCX和不支持扩展名；4xx、无外部调用、零文件和数据库残留
