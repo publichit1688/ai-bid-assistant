@@ -7,6 +7,11 @@ def test_production_start_disables_raw_uvicorn_access_log(monkeypatch):
     captured = {}
     monkeypatch.setattr(sys, "argv", ["start_production.py"])
     monkeypatch.setattr(
+        start_production.os,
+        "chdir",
+        lambda path: captured.update({"working_directory": path}),
+    )
+    monkeypatch.setattr(
         start_production,
         "prepare_and_validate_runtime",
         lambda: {"checks": {"database": "ok"}},
@@ -18,5 +23,6 @@ def test_production_start_disables_raw_uvicorn_access_log(monkeypatch):
     )
 
     assert start_production.main() == 0
+    assert captured["working_directory"] == start_production.BACKEND_ROOT
     assert captured["kwargs"]["access_log"] is False
     assert captured["kwargs"]["reload"] is False

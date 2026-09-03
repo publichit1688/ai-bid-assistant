@@ -1,4 +1,5 @@
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -27,6 +28,9 @@ def main():
     )
     args = parser.parse_args()
 
+    # Keep relative local defaults anchored to backend/ even when this script is
+    # launched from the repository root or by an external service manager.
+    os.chdir(BACKEND_ROOT)
     report = prepare_and_validate_runtime()
     print("启动检查通过:", ", ".join(report["checks"]))
     if args.check:
