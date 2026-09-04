@@ -115,6 +115,113 @@ Invoke-RestMethod 'http://127.0.0.1:8000/api/dashboard?days=7'
 
 当前已建立 pytest 用例，正常开发应优先运行 `python -m pytest`。测试夹具会在 pytest 临时目录创建独立 `bid.db` 和 `uploads/`，不得改成复用 `backend/bid.db`。
 
+V1.5工作台迁移和基础API聚焦回归：
+
+```powershell
+cd backend
+.\.venv\Scripts\python.exe -m pytest tests\test_workbench_migrations.py tests\test_workspaces_api.py --basetemp=.pytest-tmp-workbench
+```
+
+迁移测试会自行创建旧版、全新和残缺结构的临时SQLite；不得把测试命令改为连接用户数据库。
+
+人工目录章节编辑与修订冲突聚焦回归：
+
+```powershell
+cd backend
+.\.venv\Scripts\python.exe -m pytest tests\test_workspaces_api.py -q --basetemp=.pytest-tmp-workspace-sections
+```
+
+该组测试必须确认章节新增、改名、同级排序和修订快照成功，并确认过期修订返回409且不产生部分写入。
+
+AI目录建议、来源校验与失败零污染聚焦回归：
+
+```powershell
+cd backend
+.\.venv\Scripts\python.exe -m pytest tests\test_workspaces_api.py tests\test_llm_prompt.py tests\test_rate_limit.py tests\test_ai_errors.py -q --basetemp=.pytest-tmp-outline-suggestions
+```
+
+默认使用模型替身，不调用真实DeepSeek。必须确认建议引用在指定页可连续命中、AI条目保持待确认、人工章节不被覆盖，并确认模型失败或全部来源无效时数据库和修订号均不变化。
+
+AI目录建议人工审核聚焦回归：
+
+```powershell
+cd backend
+.\.venv\Scripts\python.exe -m pytest tests\test_workspaces_api.py tests\test_workbench_design.py -q --basetemp=.pytest-tmp-section-review
+```
+
+必须确认接受与拒绝均产生独立修订快照，AI来源和原文引用保持可查询；人工章节、已处理建议和过期修订不得产生新的审核写入。
+
+评分点结构化提取与来源校验聚焦回归：
+
+```powershell
+cd backend
+.\.venv\Scripts\python.exe -m pytest tests\test_workbench_criteria.py tests\test_workspaces_api.py tests\test_llm_prompt.py tests\test_rate_limit.py -q --basetemp=.pytest-tmp-criteria
+```
+
+默认使用模型替身。必须确认标题、要求、最高分值和来源正确返回，无明确分值时保持为空；无效引用、负数分值、模型失败或全部无效时不得写入评分点、来源或新修订。
+
+评分点建议人工审核聚焦回归：
+
+```powershell
+cd backend
+.\.venv\Scripts\python.exe -m pytest tests\test_workbench_criteria.py tests\test_workbench_design.py -q --basetemp=.pytest-tmp-criterion-review
+```
+
+必须确认接受和拒绝产生包含最终状态的独立修订快照，来源引用保持可查询；过期修订、重复审核和跨工作台评分点不得产生新的审核写入。
+
+评分点—章节人工映射与覆盖统计聚焦回归：
+
+```powershell
+cd backend
+.\.venv\Scripts\python.exe -m pytest tests\test_workbench_mappings.py tests\test_workbench_criteria.py tests\test_workspaces_api.py -q --basetemp=.pytest-tmp-mappings
+```
+
+必须确认只有同工作台已确认评分点和章节可以映射；重复输入、跨工作台引用、待确认对象和过期修订不得产生部分写入。同一关系再次提交应更新说明而非新增重复行，并核对修订快照和覆盖缺口统计。
+
+响应材料第二版迁移与机器契约聚焦回归：
+
+```powershell
+cd backend
+.\.venv\Scripts\python.exe -m pytest tests\test_workbench_migrations.py tests\test_workbench_design.py -q --basetemp=.pytest-tmp-material-migration
+```
+
+必须确认基础工作台可无损升级、两版迁移重复执行幂等、响应材料字段和状态枚举符合契约；残缺同名表必须中止迁移且不得登记第二版本成功。
+
+响应材料API聚焦回归（在 `backend` 目录）：
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest tests/test_workbench_materials.py -q --basetemp=.pytest-tmp-materials
+```
+
+必须覆盖材料新增、列表、人工修改、四态汇总和修订快照，并确认跨工作台目标、未确认目标、空更新及旧修订号均不会留下部分修改。
+
+智能编标工作台最小闭环回归（在 `backend` 目录）：
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest tests/test_workbench_closed_loop.py -q --basetemp=.pytest-tmp-workbench-loop
+```
+
+必须按修订顺序串联目录、带来源评分点、人工审核、章节映射和响应材料，并确认最终响应与快照保留来源、覆盖统计和材料完成状态；旧修订写入必须返回409且不得回退完成结果。
+
+前端智能编标工作台检查：
+
+- 顶部“智能编标”可进入只读工作台，Dashboard和标书分析导航仍可正常切换。
+- 未选项目显示明确空状态；选择左侧项目后加载对应工作台，刷新按钮可重新读取。
+- 页面展示当前修订、评分点覆盖/缺口、阻塞材料、目录审核状态、评分点原文页码与引用、材料责任人和四种状态。
+- 工作台页面不显示风险检查器，不出现正文生成或一键整本标书入口。
+- 只有 `origin=ai` 且 `review_status=suggested` 的目录显示接受/拒绝；只有待确认评分点显示接受/拒绝，拒绝前需二次确认。
+- 审核成功后修订号和对应审核状态立即更新；模拟或制造409时显示刷新提示，不把旧响应覆盖到页面。
+- 响应材料“编辑材料”可修改四种状态、责任人和说明；清空责任人后显示“未指定”，无变化直接提示且不发送写请求。
+- 材料保存成功后修订和四态汇总立即更新；409时关闭旧弹窗并提示刷新，不能自动重试旧内容。
+- 目录卡片“新增章节”可创建顶级人工章节；空白标题不发请求，最长200字，成功后修订号和目录列表立即更新。
+- 新增目录遇到409时关闭旧输入并提示刷新；当前批不要求父级选择和拖拽排序。
+- 已确认评分点显示“添加/管理映射”，下拉只包含已确认章节；已有关系以章节标签显示，切换到已有关系时回填其人工说明。
+- 映射保存后修订号和覆盖统计立即更新；不得删除其他已有关系，409时关闭旧弹窗并提示刷新。
+- AI目录建议和评分点提取必须先显示文件发送、模型额度和待人工审核提示；隔离回归只取消确认，不调用真实模型。
+- “新增材料”只在存在已确认评分点或章节时启用；新增表单至少关联一项，并支持人工填写名称、责任人、说明和四态状态。
+- 可用 `backend/scripts/prepare_auth_regression.py <全新临时目录>` 生成含确认/待审核目录及评分点的纯合成工作台；必须同时设置非空测试Key和不可达测试模型地址。
+- 修改后至少执行 `npm run lint` 和 `npm run build`。
+
 Windows 公共 Temp 曾出现 pytest 目录权限拒绝，因此 `backend/pytest.ini` 已将临时根固定为已忽略的 `backend/.pytest-tmp/`，并关闭非必要的 pytest 缓存写入。
 
 ## V1 核心回归清单

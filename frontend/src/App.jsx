@@ -7,6 +7,8 @@ import {
   FileWordOutlined,
   FileSearchOutlined,
   LineChartOutlined,
+  ProjectOutlined,
+  ReloadOutlined,
   SwapOutlined,
   TrophyOutlined,
   UnorderedListOutlined,
@@ -199,6 +201,263 @@ function EmptyState({description}){
                 image={Empty.PRESENTED_IMAGE_SIMPLE}
                 description={description}
             />
+        </div>
+    );
+}
+
+function WorkbenchPage({
+    currentFile,
+    workspace,
+    loading,
+    aiLoading,
+    reviewLoading,
+    error,
+    onReload,
+    onRunAi,
+    onReview,
+    onEditMaterial,
+    onAddMaterial,
+    onAddSection,
+    onMapCriterion
+}){
+    const sourceById = new Map(
+        (workspace?.source_references || []).map((source)=>[source.id, source])
+    );
+    const mappedCriterionIds = new Set(
+        (workspace?.mappings || [])
+            .filter((mapping)=>mapping.coverage_status === "confirmed")
+            .map((mapping)=>mapping.criterion_id)
+    );
+    const sectionById = new Map(
+        (workspace?.sections || []).map((section)=>[section.id, section])
+    );
+    const confirmedSections = (workspace?.sections || []).filter(
+        (section)=>section.review_status === "confirmed"
+    );
+    const materialStatus = {
+        pending:{label:"待准备", color:"default"},
+        in_progress:{label:"进行中", color:"processing"},
+        completed:{label:"已完成", color:"success"},
+        blocked:{label:"阻塞", color:"error"}
+    };
+
+    return (
+        <div className="workbench-page">
+            <div className="workbench-heading">
+                <div>
+                    <Typography.Title level={2} className="page-title">
+                        <ProjectOutlined />
+                        智能编标工作台
+                    </Typography.Title>
+                    <Typography.Text type="secondary">
+                        {currentFile
+                            ? currentFile.project_name || currentFile.filename
+                            : "请先从左侧项目中心选择一个项目"}
+                    </Typography.Text>
+                </div>
+                <div className="workbench-heading-actions">
+                    <Popconfirm
+                        title="使用 AI 生成目录建议？"
+                        description="系统会将当前招标文件内容发送给已配置模型并消耗调用额度；结果仅作为待审核建议。"
+                        okText="确认调用"
+                        cancelText="取消"
+                        onConfirm={()=>onRunAi("outline")}
+                    >
+                        <Button
+                            type="primary"
+                            disabled={!workspace || Boolean(aiLoading)}
+                            loading={aiLoading === "outline"}
+                        >
+                            生成目录建议
+                        </Button>
+                    </Popconfirm>
+                    <Popconfirm
+                        title="使用 AI 提取评分点？"
+                        description="系统会将当前招标文件内容发送给已配置模型并消耗调用额度；结果仅作为待审核建议。"
+                        okText="确认调用"
+                        cancelText="取消"
+                        onConfirm={()=>onRunAi("criteria")}
+                    >
+                        <Button
+                            disabled={!workspace || Boolean(aiLoading)}
+                            loading={aiLoading === "criteria"}
+                        >
+                            提取评分点
+                        </Button>
+                    </Popconfirm>
+                    <Button
+                        icon={<ReloadOutlined />}
+                        disabled={!currentFile || Boolean(aiLoading)}
+                        loading={loading}
+                        onClick={onReload}
+                    >
+                        刷新
+                    </Button>
+                </div>
+            </div>
+
+            <Alert
+                className="app-inline-alert"
+                type="info"
+                showIcon
+                title="当前为人工审核工作台"
+                description="支持建议审核和材料状态维护；不会自动分派责任人、生成正文或整本标书。"
+            />
+            {error && <Alert className="app-inline-alert" type="error" showIcon title={error} />}
+            {loading ? (
+                <LoadingState text="正在加载智能编标工作台..." />
+            ) : !currentFile ? (
+                <EmptyState description="请从左侧项目中心选择需要编标的项目" />
+            ) : !workspace ? (
+                <EmptyState description="工作台数据尚未加载" />
+            ) : (
+                <>
+                    <div className="workbench-summary">
+                        <Card size="small"><Typography.Text type="secondary">当前修订</Typography.Text><strong>{workspace.revision}</strong></Card>
+                        <Card size="small"><Typography.Text type="secondary">已覆盖评分点</Typography.Text><strong>{workspace.coverage?.confirmed ?? 0}</strong></Card>
+                        <Card size="small"><Typography.Text type="secondary">评分点缺口</Typography.Text><strong>{workspace.coverage?.gap ?? 0}</strong></Card>
+                        <Card size="small"><Typography.Text type="secondary">阻塞材料</Typography.Text><strong>{workspace.material_summary?.blocked ?? 0}</strong></Card>
+                    </div>
+                    <div className="workbench-columns">
+                        <Card
+                            className="section-card"
+                            title={<span className="card-title"><UnorderedListOutlined />投标目录</span>}
+                            extra={<Button size="small" type="primary" ghost onClick={onAddSection}>新增章节</Button>}
+                        >
+                            {(workspace.sections || []).length ? workspace.sections.map((section)=>(
+                                <div className="workbench-item workbench-item-stacked" key={section.id}>
+                                    <div className="workbench-item-row">
+                                        <div className="workbench-item-title">{section.title}</div>
+                                        <Tag color={section.review_status === "confirmed" ? "success" : section.review_status === "rejected" ? "default" : "warning"}>
+                                            {section.review_status === "confirmed" ? "已确认" : section.review_status === "rejected" ? "已拒绝" : "待审核"}
+                                        </Tag>
+                                    </div>
+                                    {section.origin === "ai" && section.review_status === "suggested" && (
+                                        <div className="workbench-review-actions">
+                                            <Button
+                                                size="small"
+                                                type="primary"
+                                                loading={reviewLoading === `section-${section.id}-accept`}
+                                                disabled={Boolean(reviewLoading)}
+                                                onClick={()=>onReview("section", section.id, "accept")}
+                                            >
+                                                接受
+                                            </Button>
+                                            <Popconfirm
+                                                title="拒绝这条目录建议？"
+                                                description="原文引用会保留在修订记录中。"
+                                                okText="确认拒绝"
+                                                cancelText="取消"
+                                                onConfirm={()=>onReview("section", section.id, "reject")}
+                                            >
+                                                <Button size="small" danger disabled={Boolean(reviewLoading)}>拒绝</Button>
+                                            </Popconfirm>
+                                        </div>
+                                    )}
+                                </div>
+                            )) : <EmptyState description="尚未建立投标目录" />}
+                        </Card>
+                        <Card className="section-card" title={<span className="card-title"><TrophyOutlined />评分点覆盖</span>}>
+                            {(workspace.criteria || []).length ? workspace.criteria.map((criterion)=>{
+                                const source = sourceById.get(criterion.source_ref_id);
+                                const criterionMappings = (workspace.mappings || []).filter(
+                                    (mapping)=>mapping.criterion_id === criterion.id
+                                );
+                                return (
+                                    <div className="workbench-item workbench-item-stacked" key={criterion.id}>
+                                        <div className="workbench-item-row">
+                                            <div className="workbench-item-title">{criterion.title}</div>
+                                            <Tag color={criterion.review_status === "suggested" ? "warning" : criterion.review_status === "rejected" ? "default" : mappedCriterionIds.has(criterion.id) ? "success" : "error"}>
+                                                {criterion.review_status === "suggested" ? "待审核" : criterion.review_status === "rejected" ? "已拒绝" : mappedCriterionIds.has(criterion.id) ? "已覆盖" : "缺口"}
+                                            </Tag>
+                                        </div>
+                                        <Typography.Text type="secondary">{criterion.requirement}</Typography.Text>
+                                        {source && <Typography.Text className="workbench-source">第 {source.page} 页：{source.quote}</Typography.Text>}
+                                        {criterionMappings.length > 0 && (
+                                            <div className="workbench-mapping-tags">
+                                                {criterionMappings.map((mapping)=>(
+                                                    <Tag color="blue" key={mapping.id}>
+                                                        {sectionById.get(mapping.section_id)?.title || `章节 #${mapping.section_id}`}
+                                                    </Tag>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {criterion.review_status === "suggested" && (
+                                            <div className="workbench-review-actions">
+                                                <Button
+                                                    size="small"
+                                                    type="primary"
+                                                    loading={reviewLoading === `criterion-${criterion.id}-accept`}
+                                                    disabled={Boolean(reviewLoading)}
+                                                    onClick={()=>onReview("criterion", criterion.id, "accept")}
+                                                >
+                                                    接受
+                                                </Button>
+                                                <Popconfirm
+                                                    title="拒绝这条评分点建议？"
+                                                    description="原文引用会保留在修订记录中。"
+                                                    okText="确认拒绝"
+                                                    cancelText="取消"
+                                                    onConfirm={()=>onReview("criterion", criterion.id, "reject")}
+                                                >
+                                                    <Button size="small" danger disabled={Boolean(reviewLoading)}>拒绝</Button>
+                                                </Popconfirm>
+                                            </div>
+                                        )}
+                                        {criterion.review_status === "confirmed" && (
+                                            <div className="workbench-review-actions">
+                                                <Button
+                                                    size="small"
+                                                    disabled={confirmedSections.length === 0}
+                                                    title={confirmedSections.length === 0 ? "请先新增或确认目录章节" : ""}
+                                                    onClick={()=>onMapCriterion(criterion)}
+                                                >
+                                                    {criterionMappings.length > 0 ? "管理映射" : "添加映射"}
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            }) : <EmptyState description="尚未提取评分点" />}
+                        </Card>
+                        <Card
+                            className="section-card"
+                            title={<span className="card-title"><FileSearchOutlined />响应材料</span>}
+                            extra={(
+                                <Button
+                                    size="small"
+                                    type="primary"
+                                    ghost
+                                    disabled={confirmedSections.length === 0 && (workspace.criteria || []).every((criterion)=>criterion.review_status !== "confirmed")}
+                                    title={confirmedSections.length === 0 && (workspace.criteria || []).every((criterion)=>criterion.review_status !== "confirmed") ? "请先确认评分点或目录章节" : ""}
+                                    onClick={onAddMaterial}
+                                >
+                                    新增材料
+                                </Button>
+                            )}
+                        >
+                            {(workspace.materials || []).length ? workspace.materials.map((material)=>{
+                                const status = materialStatus[material.material_status] || materialStatus.pending;
+                                return (
+                                    <div className="workbench-item workbench-item-stacked" key={material.id}>
+                                        <div className="workbench-item-row">
+                                            <div className="workbench-item-title">{material.title}</div>
+                                            <Tag color={status.color}>{status.label}</Tag>
+                                        </div>
+                                        <Typography.Text type="secondary">责任人：{material.owner_name || "未指定"}</Typography.Text>
+                                        {material.notes && <Typography.Text>{material.notes}</Typography.Text>}
+                                        <div className="workbench-review-actions">
+                                            <Button size="small" onClick={()=>onEditMaterial(material)}>
+                                                编辑材料
+                                            </Button>
+                                        </div>
+                                    </div>
+                                );
+                            }) : <EmptyState description="尚未登记响应材料" />}
+                        </Card>
+                    </div>
+                </>
+            )}
         </div>
     );
 }
@@ -427,6 +686,22 @@ const [filesError,setFilesError] = useState("");
 const [dashboardError,setDashboardError] = useState("");
 
 const [showDashboard,setShowDashboard] = useState(true);
+
+const [showWorkbench,setShowWorkbench] = useState(false);
+const [workbench,setWorkbench] = useState(null);
+const [workbenchLoading,setWorkbenchLoading] = useState(false);
+const [workbenchAiLoading,setWorkbenchAiLoading] = useState("");
+const [workbenchReviewLoading,setWorkbenchReviewLoading] = useState("");
+const [workbenchError,setWorkbenchError] = useState("");
+const [materialEditorOpen,setMaterialEditorOpen] = useState(false);
+const [materialSaving,setMaterialSaving] = useState(false);
+const [materialDraft,setMaterialDraft] = useState(null);
+const [sectionEditorOpen,setSectionEditorOpen] = useState(false);
+const [sectionSaving,setSectionSaving] = useState(false);
+const [sectionTitleDraft,setSectionTitleDraft] = useState("");
+const [mappingEditorOpen,setMappingEditorOpen] = useState(false);
+const [mappingSaving,setMappingSaving] = useState(false);
+const [mappingDraft,setMappingDraft] = useState(null);
 
 
 const [
@@ -1177,6 +1452,334 @@ setLoading(false);
 // 点击历史文件
 // ======================
 
+async function loadWorkbench(item=currentFile){
+    if(!item){
+        setWorkbench(null);
+        setWorkbenchError("");
+        return;
+    }
+    setCurrentFile(item);
+    setWorkbenchLoading(true);
+    setWorkbenchError("");
+    try{
+        const response = await apiClient.post(
+            "/api/workspaces",
+            {bid_file_id:item.id}
+        );
+        setWorkbench(response.data);
+    }
+    catch{
+        setWorkbench(null);
+        setWorkbenchError("智能编标工作台读取失败，请确认后端服务后重试。");
+    }
+    finally{
+        setWorkbenchLoading(false);
+    }
+}
+
+async function reviewWorkbenchSuggestion(kind,id,decision){
+    if(!workbench){
+        return;
+    }
+    const loadingKey = `${kind}-${id}-${decision}`;
+    const path = kind === "section"
+        ? `/api/workspaces/${workbench.id}/sections/${id}/review`
+        : `/api/workspaces/${workbench.id}/criteria/${id}/review`;
+    setWorkbenchReviewLoading(loadingKey);
+    setWorkbenchError("");
+    try{
+        const response = await apiClient.post(
+            path,
+            {revision:workbench.revision, decision}
+        );
+        setWorkbench(response.data);
+        message.success(decision === "accept" ? "建议已接受" : "建议已拒绝");
+    }
+    catch(error){
+        if(error.response?.status === 409){
+            setWorkbenchError("工作台已被更新，请点击刷新后再审核。");
+        }
+        else{
+            setWorkbenchError("建议审核失败，请稍后重试。");
+        }
+    }
+    finally{
+        setWorkbenchReviewLoading("");
+    }
+}
+
+async function runWorkbenchAi(kind){
+    if(!workbench || workbenchAiLoading){
+        return;
+    }
+    const isOutline = kind === "outline";
+    const path = isOutline
+        ? `/api/workspaces/${workbench.id}/outline-suggestions`
+        : `/api/workspaces/${workbench.id}/criteria-extractions`;
+    setWorkbenchAiLoading(kind);
+    setWorkbenchError("");
+    try{
+        const response = await apiClient.post(path, {revision:workbench.revision});
+        setWorkbench(response.data);
+        const warningCount = Array.isArray(response.data?.warnings)
+            ? response.data.warnings.length
+            : 0;
+        const resultLabel = isOutline ? "目录建议" : "评分点建议";
+        message.success(
+            warningCount > 0
+                ? `${resultLabel}已生成，${warningCount} 条因来源无法验证未采用，请人工审核。`
+                : `${resultLabel}已生成，请人工审核后使用。`
+        );
+    }
+    catch(error){
+        if(error.response?.status === 409){
+            setWorkbenchError("工作台已被更新，请点击刷新后再调用 AI。");
+        }
+        else{
+            const detail = error.response?.data?.detail;
+            setWorkbenchError(
+                (typeof detail === "string" ? detail : detail?.message)
+                || (isOutline ? "目录建议生成失败，请稍后重试。" : "评分点提取失败，请稍后重试。")
+            );
+        }
+    }
+    finally{
+        setWorkbenchAiLoading("");
+    }
+}
+
+function openMaterialEditor(material){
+    setMaterialDraft({
+        id:material.id,
+        title:material.title,
+        material_status:material.material_status,
+        owner_name:material.owner_name || "",
+        notes:material.notes || "",
+        original_owner_name:material.owner_name || "",
+        original_notes:material.notes || "",
+        original_status:material.material_status
+    });
+    setMaterialEditorOpen(true);
+}
+
+function openMaterialCreator(){
+    const firstCriterion = (workbench?.criteria || []).find(
+        (criterion)=>criterion.review_status === "confirmed"
+    );
+    const firstSection = (workbench?.sections || []).find(
+        (section)=>section.review_status === "confirmed"
+    );
+    setMaterialDraft({
+        id:null,
+        title:"",
+        criterion_id:firstCriterion?.id,
+        section_id:firstCriterion ? undefined : firstSection?.id,
+        material_status:"pending",
+        owner_name:"",
+        notes:""
+    });
+    setMaterialEditorOpen(true);
+}
+
+function closeMaterialEditor(){
+    if(materialSaving){
+        return;
+    }
+    setMaterialEditorOpen(false);
+    setMaterialDraft(null);
+}
+
+async function saveMaterialEditor(){
+    if(!workbench || !materialDraft){
+        return;
+    }
+    const title = materialDraft.title.trim();
+    const ownerName = materialDraft.owner_name.trim();
+    const notes = materialDraft.notes.trim();
+    const isCreating = !materialDraft.id;
+    if(isCreating && !title){
+        message.warning("请输入材料名称");
+        return;
+    }
+    if(isCreating && !materialDraft.criterion_id && !materialDraft.section_id){
+        message.warning("请至少关联一个已确认评分点或目录章节");
+        return;
+    }
+    if(
+        !isCreating
+        &&
+        ownerName === materialDraft.original_owner_name
+        && notes === materialDraft.original_notes
+        && materialDraft.material_status === materialDraft.original_status
+    ){
+        message.info("材料信息没有变化");
+        return;
+    }
+    setMaterialSaving(true);
+    setWorkbenchError("");
+    try{
+        const payload = {
+                revision:workbench.revision,
+                material_status:materialDraft.material_status,
+                owner_name:ownerName || null,
+                notes:notes || null
+        };
+        if(isCreating){
+            payload.title = title;
+            payload.criterion_id = materialDraft.criterion_id || null;
+            payload.section_id = materialDraft.section_id || null;
+        }
+        const response = isCreating
+            ? await apiClient.post(`/api/workspaces/${workbench.id}/materials`, payload)
+            : await apiClient.patch(`/api/workspaces/${workbench.id}/materials/${materialDraft.id}`, payload);
+        setWorkbench(response.data);
+        setMaterialEditorOpen(false);
+        setMaterialDraft(null);
+        message.success(isCreating ? "响应材料已新增" : "响应材料已更新");
+    }
+    catch(error){
+        if(error.response?.status === 409){
+            setWorkbenchError(`工作台已被更新，请刷新后重新${isCreating ? "新增" : "编辑"}材料。`);
+            setMaterialEditorOpen(false);
+            setMaterialDraft(null);
+        }
+        else{
+            const detail = error.response?.data?.detail;
+            message.error(
+                (typeof detail === "string" ? detail : detail?.message)
+                || "响应材料保存失败，请稍后重试。"
+            );
+        }
+    }
+    finally{
+        setMaterialSaving(false);
+    }
+}
+
+function openSectionEditor(){
+    setSectionTitleDraft("");
+    setSectionEditorOpen(true);
+}
+
+function closeSectionEditor(){
+    if(sectionSaving){
+        return;
+    }
+    setSectionEditorOpen(false);
+    setSectionTitleDraft("");
+}
+
+async function saveSectionEditor(){
+    if(!workbench){
+        return;
+    }
+    const title = sectionTitleDraft.trim();
+    if(!title){
+        message.warning("请输入章节标题");
+        return;
+    }
+    setSectionSaving(true);
+    setWorkbenchError("");
+    try{
+        const response = await apiClient.post(
+            `/api/workspaces/${workbench.id}/sections`,
+            {revision:workbench.revision, title}
+        );
+        setWorkbench(response.data);
+        setSectionEditorOpen(false);
+        setSectionTitleDraft("");
+        message.success("目录章节已新增");
+    }
+    catch(error){
+        if(error.response?.status === 409){
+            setWorkbenchError("工作台已被更新，请刷新后重新新增章节。");
+            setSectionEditorOpen(false);
+            setSectionTitleDraft("");
+        }
+        else{
+            message.error(error.response?.data?.detail?.message || "目录章节新增失败，请稍后重试。");
+        }
+    }
+    finally{
+        setSectionSaving(false);
+    }
+}
+
+function openMappingEditor(criterion){
+    const confirmedSections = (workbench?.sections || []).filter(
+        (section)=>section.review_status === "confirmed"
+    );
+    const existing = (workbench?.mappings || []).find(
+        (mapping)=>mapping.criterion_id === criterion.id
+    );
+    setMappingDraft({
+        criterion_id:criterion.id,
+        criterion_title:criterion.title,
+        section_id:existing?.section_id || confirmedSections[0]?.id,
+        rationale:existing?.rationale || ""
+    });
+    setMappingEditorOpen(true);
+}
+
+function closeMappingEditor(){
+    if(mappingSaving){
+        return;
+    }
+    setMappingEditorOpen(false);
+    setMappingDraft(null);
+}
+
+function selectMappingSection(sectionId){
+    const existing = (workbench?.mappings || []).find(
+        (mapping)=>mapping.criterion_id === mappingDraft?.criterion_id
+            && mapping.section_id === sectionId
+    );
+    setMappingDraft({
+        ...mappingDraft,
+        section_id:sectionId,
+        rationale:existing?.rationale || ""
+    });
+}
+
+async function saveMappingEditor(){
+    if(!workbench || !mappingDraft?.section_id){
+        message.warning("请选择一个已确认目录章节");
+        return;
+    }
+    setMappingSaving(true);
+    setWorkbenchError("");
+    try{
+        const response = await apiClient.put(
+            `/api/workspaces/${workbench.id}/mappings`,
+            {
+                revision:workbench.revision,
+                mappings:[{
+                    criterion_id:mappingDraft.criterion_id,
+                    section_id:mappingDraft.section_id,
+                    rationale:mappingDraft.rationale.trim() || null
+                }]
+            }
+        );
+        setWorkbench(response.data);
+        setMappingEditorOpen(false);
+        setMappingDraft(null);
+        message.success("评分点映射已保存");
+    }
+    catch(error){
+        if(error.response?.status === 409){
+            setWorkbenchError("工作台已被更新，请刷新后重新设置映射。");
+            setMappingEditorOpen(false);
+            setMappingDraft(null);
+        }
+        else{
+            message.error(error.response?.data?.detail?.message || "评分点映射保存失败，请稍后重试。");
+        }
+    }
+    finally{
+        setMappingSaving(false);
+    }
+}
+
 async function selectFile(item){
 
     setCurrentFile(item);
@@ -1278,6 +1881,7 @@ async function openDashboardProject(item){
 
     // 先切换到标书分析页面
     setShowDashboard(false);
+    setShowWorkbench(false);
 
     // 使用现有历史文件读取逻辑
     await selectFile(item);
@@ -3313,7 +3917,12 @@ height:"100vh"
             <Card
                 hoverable
                 onClick={()=>{
-                    selectFile(item);
+                    if(showWorkbench){
+                        loadWorkbench(item);
+                    }
+                    else{
+                        selectFile(item);
+                    }
                 }}
                 style={{
                     marginBottom:12,
@@ -3493,7 +4102,8 @@ height:"100vh"
                         onClick={(e)=>{
 
                             e.stopPropagation();
-
+                            setShowDashboard(false);
+                            setShowWorkbench(false);
                             selectFile(item);
 
                         }}
@@ -3760,6 +4370,7 @@ height:"100vh"
             type="text"
             onClick={()=>{
                 setShowDashboard(true);
+                setShowWorkbench(false);
             }}
             style={{
                 height:38,
@@ -3793,32 +4404,55 @@ height:"100vh"
             type="text"
             onClick={()=>{
                 setShowDashboard(false);
+                setShowWorkbench(false);
             }}
             style={{
                 height:38,
                 padding:"0 18px",
                 borderRadius:8,
                 border:"none",
-                fontWeight:!showDashboard ? 600 : 400,
+                fontWeight:!showDashboard && !showWorkbench ? 600 : 400,
 
                 color:
-                    !showDashboard
+                    !showDashboard && !showWorkbench
                     ? "#1677ff"
                     : "#595959",
 
                 background:
-                    !showDashboard
+                    !showDashboard && !showWorkbench
                     ? "#ffffff"
                     : "transparent",
 
                 boxShadow:
-                    !showDashboard
+                    !showDashboard && !showWorkbench
                     ? "0 2px 8px rgba(0,0,0,0.08)"
                     : "none"
             }}
         >
             <FileSearchOutlined />
             <span className="app-nav-label">标书分析</span>
+        </Button>
+
+        <Button
+            type="text"
+            onClick={()=>{
+                setShowDashboard(false);
+                setShowWorkbench(true);
+                loadWorkbench();
+            }}
+            style={{
+                height:38,
+                padding:"0 18px",
+                borderRadius:8,
+                border:"none",
+                fontWeight:showWorkbench ? 600 : 400,
+                color:showWorkbench ? "#1677ff" : "#595959",
+                background:showWorkbench ? "#ffffff" : "transparent",
+                boxShadow:showWorkbench ? "0 2px 8px rgba(0,0,0,0.08)" : "none"
+            }}
+        >
+            <ProjectOutlined />
+            <span className="app-nav-label">智能编标</span>
         </Button>
 
     </div>
@@ -3867,6 +4501,167 @@ height:"100vh"
     )}
 </Modal>
 
+<Modal
+    title={mappingDraft ? `设置评分点映射：${mappingDraft.criterion_title}` : "设置评分点映射"}
+    open={mappingEditorOpen}
+    okText="保存映射"
+    cancelText="取消"
+    confirmLoading={mappingSaving}
+    onOk={saveMappingEditor}
+    onCancel={closeMappingEditor}
+    destroyOnHidden
+>
+    {mappingDraft && (
+        <div className="material-editor-fields">
+            <label>
+                <span>已确认目录章节</span>
+                <Select
+                    value={mappingDraft.section_id}
+                    placeholder="选择响应章节"
+                    onChange={selectMappingSection}
+                    options={(workbench?.sections || [])
+                        .filter((section)=>section.review_status === "confirmed")
+                        .map((section)=>({value:section.id, label:section.title}))}
+                />
+            </label>
+            <label>
+                <span>人工映射说明</span>
+                <Input.TextArea
+                    value={mappingDraft.rationale}
+                    maxLength={2000}
+                    autoSize={{minRows:3, maxRows:6}}
+                    placeholder="说明该章节如何响应评分点（可选）"
+                    onChange={(event)=>setMappingDraft({...mappingDraft, rationale:event.target.value})}
+                />
+            </label>
+            <Alert
+                type="info"
+                showIcon
+                title="当前操作只新增或更新所选关系"
+                description="不会删除其他已有映射，也不会由AI自动选择章节。"
+            />
+        </div>
+    )}
+</Modal>
+
+<Modal
+    title="新增目录章节"
+    open={sectionEditorOpen}
+    okText="新增"
+    cancelText="取消"
+    confirmLoading={sectionSaving}
+    onOk={saveSectionEditor}
+    onCancel={closeSectionEditor}
+    destroyOnHidden
+>
+    <Typography.Text type="secondary">
+        当前仅新增顶级人工章节；创建后可用于评分点映射。
+    </Typography.Text>
+    <Input
+        value={sectionTitleDraft}
+        maxLength={200}
+        showCount
+        autoFocus
+        placeholder="例如：技术响应方案"
+        onChange={(event)=>setSectionTitleDraft(event.target.value)}
+        onPressEnter={saveSectionEditor}
+        style={{marginTop:12}}
+    />
+</Modal>
+
+<Modal
+    title={materialDraft?.id ? `编辑响应材料：${materialDraft.title}` : "新增响应材料"}
+    open={materialEditorOpen}
+    okText="保存"
+    cancelText="取消"
+    confirmLoading={materialSaving}
+    onOk={saveMaterialEditor}
+    onCancel={closeMaterialEditor}
+    destroyOnHidden
+>
+    {materialDraft && (
+        <div className="material-editor-fields">
+            {!materialDraft.id && (
+                <>
+                    <label>
+                        <span>材料名称</span>
+                        <Input
+                            value={materialDraft.title}
+                            maxLength={200}
+                            showCount
+                            autoFocus
+                            placeholder="例如：营业执照复印件"
+                            onChange={(event)=>setMaterialDraft({...materialDraft, title:event.target.value})}
+                        />
+                    </label>
+                    <label>
+                        <span>关联评分点（可选）</span>
+                        <Select
+                            allowClear
+                            value={materialDraft.criterion_id}
+                            placeholder="选择已确认评分点"
+                            onChange={(value)=>setMaterialDraft({...materialDraft, criterion_id:value})}
+                            options={(workbench?.criteria || [])
+                                .filter((criterion)=>criterion.review_status === "confirmed")
+                                .map((criterion)=>({value:criterion.id, label:criterion.title}))}
+                        />
+                    </label>
+                    <label>
+                        <span>关联目录章节（可选）</span>
+                        <Select
+                            allowClear
+                            value={materialDraft.section_id}
+                            placeholder="选择已确认目录章节"
+                            onChange={(value)=>setMaterialDraft({...materialDraft, section_id:value})}
+                            options={(workbench?.sections || [])
+                                .filter((section)=>section.review_status === "confirmed")
+                                .map((section)=>({value:section.id, label:section.title}))}
+                        />
+                    </label>
+                </>
+            )}
+            <label>
+                <span>材料状态</span>
+                <Select
+                    value={materialDraft.material_status}
+                    onChange={(value)=>setMaterialDraft({...materialDraft, material_status:value})}
+                    options={[
+                        {value:"pending", label:"待准备"},
+                        {value:"in_progress", label:"进行中"},
+                        {value:"completed", label:"已完成"},
+                        {value:"blocked", label:"阻塞"}
+                    ]}
+                />
+            </label>
+            <label>
+                <span>责任人</span>
+                <Input
+                    value={materialDraft.owner_name}
+                    maxLength={200}
+                    placeholder="人工填写；留空表示未指定"
+                    onChange={(event)=>setMaterialDraft({...materialDraft, owner_name:event.target.value})}
+                />
+            </label>
+            <label>
+                <span>材料说明</span>
+                <Input.TextArea
+                    value={materialDraft.notes}
+                    maxLength={4000}
+                    autoSize={{minRows:3, maxRows:8}}
+                    placeholder="填写准备要求、缺口或复核说明"
+                    onChange={(event)=>setMaterialDraft({...materialDraft, notes:event.target.value})}
+                />
+            </label>
+            <Alert
+                type="info"
+                showIcon
+                title="材料信息均由人工维护"
+                description="新增时至少关联一个已确认评分点或目录章节；系统不会自动分派人员或生成标书正文。"
+            />
+        </div>
+    )}
+</Modal>
+
 
 
 
@@ -3880,6 +4675,25 @@ className="app-content"
 >
 
 <div className="app-content-inner">
+
+{showWorkbench ? (
+    <WorkbenchPage
+        currentFile={currentFile}
+        workspace={workbench}
+        loading={workbenchLoading}
+        aiLoading={workbenchAiLoading}
+        reviewLoading={workbenchReviewLoading}
+        error={workbenchError}
+        onReload={()=>loadWorkbench()}
+        onRunAi={runWorkbenchAi}
+        onReview={reviewWorkbenchSuggestion}
+        onEditMaterial={openMaterialEditor}
+        onAddMaterial={openMaterialCreator}
+        onAddSection={openSectionEditor}
+        onMapCriterion={openMappingEditor}
+    />
+) : (
+<>
 
 {
     showDashboard
@@ -7518,8 +8332,8 @@ onClick={startAnalyze}
     )
 }
 
-
-
+</>
+)}
 
 </div>
 
@@ -7535,7 +8349,7 @@ onClick={startAnalyze}
 右侧AI
 ================== */}
 
-
+{!showWorkbench && (
 <Sider
     className={`app-right-sider ${rightCollapsed ? "is-collapsed" : ""}`}
     width={
@@ -8899,6 +9713,7 @@ onClick={startAnalyze}
     </div>
 
 </Sider>
+)}
 
 
 

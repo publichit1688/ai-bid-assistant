@@ -158,6 +158,121 @@ textarea {
   overflow: hidden;
 }
 
+.workbench-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.workbench-heading .page-title {
+  margin-bottom: 4px !important;
+}
+
+.workbench-heading-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.workbench-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.workbench-summary .ant-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.workbench-summary strong {
+  font-size: 24px;
+  color: #1677ff;
+}
+
+.workbench-columns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.workbench-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.workbench-item:last-child {
+  border-bottom: 0;
+}
+
+.workbench-item-stacked {
+  flex-direction: column;
+}
+
+.workbench-item-row {
+  display: flex;
+  width: 100%;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.workbench-item-title {
+  min-width: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.workbench-source {
+  padding: 8px 10px;
+  color: #595959;
+  background: #fafafa;
+  border-left: 3px solid #91caff;
+  border-radius: 4px;
+}
+
+.workbench-review-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  width: 100%;
+  padding-top: 4px;
+}
+
+.workbench-mapping-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  width: 100%;
+}
+
+.material-editor-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.material-editor-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #262626;
+  font-weight: 600;
+}
+
+.material-editor-fields .ant-select {
+  width: 100%;
+}
+
 @media (max-width: 1200px) {
   .app-content {
     padding: 16px;
@@ -222,6 +337,14 @@ textarea {
   .dashboard-page .ant-card,
   .dashboard-page .ant-card-body {
     min-width: 0;
+  }
+
+  .workbench-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .workbench-columns {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

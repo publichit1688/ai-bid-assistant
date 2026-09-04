@@ -1,0 +1,29 @@
+{
+  "contract_version": "1.0",
+  "product_version": "1.5-design",
+  "workspace_statuses": ["draft", "reviewing", "frozen"],
+  "review_statuses": ["suggested", "confirmed", "rejected"],
+  "coverage_statuses": ["proposed", "confirmed", "gap"],
+  "material_statuses": ["pending", "in_progress", "completed", "blocked"],
+  "origins": ["ai", "user"],
+  "entities": {
+    "workspace": ["bid_file_id", "title", "status", "revision"],
+    "section": ["workspace_id", "parent_id", "stable_key", "title", "sort_order", "origin", "review_status", "source_ref_id"],
+    "criterion": ["workspace_id", "stable_key", "title", "requirement", "max_score", "review_status", "source_ref_id"],
+    "mapping": ["criterion_id", "section_id", "coverage_status", "rationale", "origin"],
+    "source_reference": ["bid_file_id", "page", "quote", "locator", "fingerprint"],
+    "revision": ["workspace_id", "revision", "action", "snapshot"],
+    "response_material": ["workspace_id", "criterion_id", "section_id", "stable_key", "title", "material_status", "owner_name", "notes"]
+  },
+  "invariants": {
+    "ai_results_start_as_suggestions": true,
+    "confirmed_content_is_never_silently_overwritten": true,
+    "criterion_source_is_required": true,
+    "optimistic_revision_is_required_for_updates": true,
+    "ai_failure_writes_no_partial_revision": true,
+    "one_click_full_bid_generation": false,
+    "automatic_bid_submission": false,
+    "automatic_owner_assignment": false,
+    "material_requires_criterion_or_section": true
+  }
+}

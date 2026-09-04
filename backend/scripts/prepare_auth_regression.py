@@ -22,7 +22,7 @@ def create_pdf(path, text):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Prepare isolated, synthetic fixtures for auth regression."
+        description="Prepare isolated, synthetic fixtures for auth and workbench regression."
     )
     parser.add_argument("root", type=Path)
     args = parser.parse_args()
@@ -41,7 +41,14 @@ def main():
     os.environ["REPORT_DIR"] = str(report_dir)
 
     from app.database import Base, SessionLocal, engine
-    from app.models import BidFile
+    from app.models import (
+        BidFile,
+        BidWorkspace,
+        OutlineSection,
+        ScoringCriterion,
+        SourceReference,
+        WorkspaceRevision,
+    )
 
     pdf_path = upload_dir / "auth-sample.pdf"
     create_pdf(pdf_path, "AUTH REGRESSION PDF PREVIEW")
@@ -65,16 +72,17 @@ def main():
     Base.metadata.create_all(engine)
     session = SessionLocal()
     try:
-        session.add_all(
-            [
-                BidFile(
+        pdf_file = BidFile(
                     filename=pdf_path.name,
                     filepath=str(pdf_path),
                     project_name="Auth PDF Project",
                     analysis=analysis,
                     risk="[]",
                     status="analyzed",
-                ),
+                )
+        session.add_all(
+            [
+                pdf_file,
                 BidFile(
                     filename=word_path.name,
                     filepath=str(word_path),
@@ -82,6 +90,78 @@ def main():
                     analysis=analysis,
                     risk="[]",
                     status="analyzed",
+                ),
+            ]
+        )
+        session.flush()
+        workspace = BidWorkspace(
+            bid_file_id=pdf_file.id,
+            title="Synthetic Workbench",
+            status="draft",
+            revision=1,
+        )
+        session.add(workspace)
+        session.flush()
+        confirmed_source = SourceReference(
+            bid_file_id=pdf_file.id,
+            page=1,
+            quote="AUTH REGRESSION PDF PREVIEW",
+            locator=json.dumps({"page": 1}),
+            fingerprint="synthetic-confirmed-source",
+        )
+        suggested_source = SourceReference(
+            bid_file_id=pdf_file.id,
+            page=1,
+            quote="AUTH REGRESSION PDF PREVIEW",
+            locator=json.dumps({"page": 1}),
+            fingerprint="synthetic-suggested-source",
+        )
+        session.add_all([confirmed_source, suggested_source])
+        session.flush()
+        session.add_all(
+            [
+                OutlineSection(
+                    workspace_id=workspace.id,
+                    stable_key="synthetic-confirmed-section",
+                    title="技术响应方案",
+                    sort_order=0,
+                    origin="manual",
+                    review_status="confirmed",
+                ),
+                OutlineSection(
+                    workspace_id=workspace.id,
+                    stable_key="synthetic-suggested-section",
+                    title="项目实施计划",
+                    sort_order=1,
+                    origin="ai",
+                    review_status="suggested",
+                    source_ref_id=suggested_source.id,
+                ),
+                ScoringCriterion(
+                    workspace_id=workspace.id,
+                    stable_key="synthetic-confirmed-criterion",
+                    title="技术方案完整性",
+                    requirement="提供完整技术实施方案",
+                    max_score=10,
+                    review_status="confirmed",
+                    source_ref_id=confirmed_source.id,
+                ),
+                ScoringCriterion(
+                    workspace_id=workspace.id,
+                    stable_key="synthetic-suggested-criterion",
+                    title="进度计划合理性",
+                    requirement="提供项目进度计划",
+                    max_score=5,
+                    review_status="suggested",
+                    source_ref_id=suggested_source.id,
+                ),
+                WorkspaceRevision(
+                    workspace_id=workspace.id,
+                    revision=1,
+                    action="workspace_create",
+                    snapshot=json.dumps(
+                        {"sections": [], "criteria": [], "mappings": [], "materials": []}
+                    ),
                 ),
             ]
         )

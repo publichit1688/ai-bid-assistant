@@ -7,8 +7,19 @@ from app.services.rate_limit import (
     RateLimitMiddleware,
     SlidingWindowRateLimiter,
     client_identity,
+    route_category,
 )
 from app.services.request_logging import RequestLoggingMiddleware
+
+
+def test_workbench_outline_suggestions_use_ai_rate_limit_category():
+    assert (
+        route_category("POST", "/api/workspaces/42/outline-suggestions") == "ai"
+    )
+    assert route_category("GET", "/api/workspaces/42") is None
+    assert (
+        route_category("POST", "/api/workspaces/42/criteria-extractions") == "ai"
+    )
 
 
 def test_sliding_window_returns_retry_and_recovers_after_window():

@@ -30,6 +30,97 @@ def get_deepseek_client():
     )
 
 
+def generate_outline_suggestions(pages):
+    """Generate source-backed outline suggestions without persisting provider output."""
+    source = "\n\n".join(
+        f"【第{item['page']}页】\n{item.get('text', '')}"
+        for item in pages
+    )[:50000]
+    prompt = f"""
+你是中国工程建设投标文件目录规划助手。
+请仅依据给定招标文件，提出投标文件目录建议。不要生成投标文件正文。
+
+每条建议必须提供：
+- title：简洁章节标题；
+- parent_index：父章节在 suggestions 数组中的从0开始索引，根章节为 null，且只能指向更早的条目；
+- page：依据所在的原始页码；
+- quote：该页中可以连续逐字找到的简短原文，不得改写或概括。
+
+只返回合法JSON，严格使用以下结构：
+{{"suggestions":[{{"title":"资格审查","parent_index":null,"page":3,"quote":"资格审查标准"}}]}}
+
+招标文件：
+{source}
+"""
+    response = get_deepseek_client().chat.completions.create(
+        model=get_deepseek_model("deepseek-chat"),
+        response_format={"type": "json_object"},
+        messages=[
+            {
+                "role": "system",
+                "content": "你只能输出可由招标原文验证的目录建议JSON。",
+            },
+            {"role": "user", "content": prompt},
+        ],
+        temperature=0.1,
+    )
+    content = response.choices[0].message.content.strip()
+    content = content.replace("```json", "").replace("```", "").strip()
+    try:
+        result = json.loads(content)
+    except json.JSONDecodeError as exc:
+        raise AIResponseFormatError("AI outline response is not valid JSON") from exc
+    if not isinstance(result, dict) or not isinstance(result.get("suggestions"), list):
+        raise AIResponseFormatError("AI outline response violates the contract")
+    return result
+
+
+def generate_scoring_criteria(pages):
+    """Extract scoring criteria candidates; persistence validates every source quote."""
+    source = "\n\n".join(
+        f"【第{item['page']}页】\n{item.get('text', '')}"
+        for item in pages
+    )[:50000]
+    prompt = f"""
+你是中国工程建设招标文件评分办法提取助手。
+请仅提取招标文件中明确出现的评分点，不得推测、补写或生成投标响应正文。
+
+每个评分点必须包含：
+- title：评分项简短标题；
+- requirement：该评分项的完整响应要求；
+- max_score：明确的最高分值，原文未明确时为 null；
+- page：依据所在的原始页码；
+- quote：该页中可以连续逐字找到的原文片段，不得改写或概括。
+
+只返回合法JSON，严格使用以下结构：
+{{"criteria":[{{"title":"项目业绩","requirement":"提供类似项目业绩证明","max_score":5,"page":12,"quote":"类似项目业绩得5分"}}]}}
+
+招标文件：
+{source}
+"""
+    response = get_deepseek_client().chat.completions.create(
+        model=get_deepseek_model("deepseek-chat"),
+        response_format={"type": "json_object"},
+        messages=[
+            {
+                "role": "system",
+                "content": "你只能输出具有可核验原文来源的评分点JSON。",
+            },
+            {"role": "user", "content": prompt},
+        ],
+        temperature=0.1,
+    )
+    content = response.choices[0].message.content.strip()
+    content = content.replace("```json", "").replace("```", "").strip()
+    try:
+        result = json.loads(content)
+    except json.JSONDecodeError as exc:
+        raise AIResponseFormatError("AI criteria response is not valid JSON") from exc
+    if not isinstance(result, dict) or not isinstance(result.get("criteria"), list):
+        raise AIResponseFormatError("AI criteria response violates the contract")
+    return result
+
+
 
 
 

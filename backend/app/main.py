@@ -11,9 +11,10 @@ from app.version import APP_VERSION
 # 数据库
 
 from app.database import engine, Base
+from app.migrations import run_migrations
 
 # 重要：加载所有数据库模型
-from app.models import BidFile
+from app import models  # noqa: F401
 
 
 
@@ -26,6 +27,7 @@ from app.api.compare import router as compare_router
 from app.api.dashboard import router as dashboard_router
 from app.api import report
 from app.api import compare_report
+from app.api.workspaces import router as workspaces_router
 
 
 
@@ -33,6 +35,7 @@ from app.api import compare_report
 # 创建数据库表
 # =========================
 
+run_migrations(engine)
 Base.metadata.create_all(
     bind=engine
 )
@@ -185,6 +188,11 @@ app.include_router(
 
 app.include_router(
     report.router,
+    prefix="/api"
+)
+
+app.include_router(
+    workspaces_router,
     prefix="/api"
 )
 

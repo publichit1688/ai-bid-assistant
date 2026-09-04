@@ -24,6 +24,18 @@ LIMITED_ROUTES = {
 }
 
 
+def route_category(method, path):
+    category = LIMITED_ROUTES.get((method, path))
+    if (
+        category is None
+        and method == "POST"
+        and path.startswith("/api/workspaces/")
+        and path.endswith(("/outline-suggestions", "/criteria-extractions"))
+    ):
+        return "ai"
+    return category
+
+
 class SlidingWindowRateLimiter:
     def __init__(self):
         self._events = defaultdict(deque)
@@ -63,7 +75,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.limiter = limiter or SlidingWindowRateLimiter()
 
     async def dispatch(self, request, call_next):
-        category = LIMITED_ROUTES.get((request.method, request.url.path))
+        category = route_category(request.method, request.url.path)
         if not category:
             return await call_next(request)
 

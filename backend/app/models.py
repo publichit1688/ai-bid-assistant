@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, Text, DateTime
+from sqlalchemy import CheckConstraint, Column, DateTime, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint
 
 from datetime import datetime
 
@@ -135,3 +135,120 @@ class DashboardAICache(Base):
         DateTime,
         default=datetime.now
     )
+
+
+class BidWorkspace(Base):
+    __tablename__ = "bid_workspaces"
+
+    id = Column(Integer, primary_key=True, index=True)
+    bid_file_id = Column(Integer, ForeignKey("bid_files.id"), unique=True, nullable=False)
+    title = Column(String, nullable=False)
+    status = Column(String, nullable=False, default="draft")
+    revision = Column(Integer, nullable=False, default=1)
+    created_time = Column(DateTime, nullable=False, default=datetime.now)
+    updated_time = Column(DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
+
+
+class SourceReference(Base):
+    __tablename__ = "source_references"
+
+    id = Column(Integer, primary_key=True, index=True)
+    bid_file_id = Column(Integer, ForeignKey("bid_files.id"), nullable=False, index=True)
+    page = Column(Integer, nullable=True)
+    quote = Column(Text, nullable=False)
+    locator = Column(Text, nullable=True)
+    fingerprint = Column(String, nullable=False, index=True)
+
+
+class OutlineSection(Base):
+    __tablename__ = "outline_sections"
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "stable_key", name="uq_outline_workspace_key"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    workspace_id = Column(Integer, ForeignKey("bid_workspaces.id"), nullable=False, index=True)
+    parent_id = Column(Integer, ForeignKey("outline_sections.id"), nullable=True)
+    stable_key = Column(String, nullable=False)
+    title = Column(String, nullable=False)
+    sort_order = Column(Integer, nullable=False)
+    origin = Column(String, nullable=False)
+    review_status = Column(String, nullable=False)
+    source_ref_id = Column(Integer, ForeignKey("source_references.id"), nullable=True)
+    created_time = Column(DateTime, nullable=False, default=datetime.now)
+    updated_time = Column(DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
+
+
+class ScoringCriterion(Base):
+    __tablename__ = "scoring_criteria"
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "stable_key", name="uq_criterion_workspace_key"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    workspace_id = Column(Integer, ForeignKey("bid_workspaces.id"), nullable=False, index=True)
+    stable_key = Column(String, nullable=False)
+    title = Column(String, nullable=False)
+    requirement = Column(Text, nullable=False)
+    max_score = Column(Numeric, nullable=True)
+    review_status = Column(String, nullable=False)
+    source_ref_id = Column(Integer, ForeignKey("source_references.id"), nullable=False)
+    created_time = Column(DateTime, nullable=False, default=datetime.now)
+    updated_time = Column(DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
+
+
+class CriterionSectionMapping(Base):
+    __tablename__ = "criterion_section_mappings"
+    __table_args__ = (
+        UniqueConstraint("criterion_id", "section_id", name="uq_criterion_section"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    criterion_id = Column(Integer, ForeignKey("scoring_criteria.id"), nullable=False, index=True)
+    section_id = Column(Integer, ForeignKey("outline_sections.id"), nullable=False, index=True)
+    coverage_status = Column(String, nullable=False)
+    rationale = Column(Text, nullable=True)
+    origin = Column(String, nullable=False)
+    created_time = Column(DateTime, nullable=False, default=datetime.now)
+    updated_time = Column(DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
+
+
+class ResponseMaterial(Base):
+    __tablename__ = "response_materials"
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "stable_key", name="uq_material_workspace_key"),
+        CheckConstraint(
+            "criterion_id IS NOT NULL OR section_id IS NOT NULL",
+            name="ck_material_target",
+        ),
+        CheckConstraint(
+            "material_status IN ('pending', 'in_progress', 'completed', 'blocked')",
+            name="ck_material_status",
+        ),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    workspace_id = Column(Integer, ForeignKey("bid_workspaces.id"), nullable=False, index=True)
+    criterion_id = Column(Integer, ForeignKey("scoring_criteria.id"), nullable=True, index=True)
+    section_id = Column(Integer, ForeignKey("outline_sections.id"), nullable=True, index=True)
+    stable_key = Column(String, nullable=False)
+    title = Column(String, nullable=False)
+    material_status = Column(String, nullable=False, default="pending")
+    owner_name = Column(String, nullable=True)
+    notes = Column(Text, nullable=True)
+    created_time = Column(DateTime, nullable=False, default=datetime.now)
+    updated_time = Column(DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
+
+
+class WorkspaceRevision(Base):
+    __tablename__ = "workspace_revisions"
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "revision", name="uq_workspace_revision"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    workspace_id = Column(Integer, ForeignKey("bid_workspaces.id"), nullable=False, index=True)
+    revision = Column(Integer, nullable=False)
+    action = Column(String, nullable=False)
+    snapshot = Column(Text, nullable=False)
+    created_time = Column(DateTime, nullable=False, default=datetime.now)
