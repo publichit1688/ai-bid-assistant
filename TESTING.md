@@ -61,7 +61,7 @@ cd backend
 
 类生产验证必须使用隔离数据库、上传目录、报告目录和未占用端口；依次请求 `/`、`/api/health`、`/api/health/ready`、`/api/files`，最后正常停止进程。不得为了测试覆盖当前 `.env` 或连接用户 `bid.db`。
 
-共享鉴权回归可用 `backend/scripts/prepare_auth_regression.py <全新临时目录>` 创建纯合成SQLite、PDF及预生成Word预览夹具。脚本拒绝覆盖已有目录，不包含密钥；密钥只在启动进程环境中设置。回归结束必须正常停止前后端，不得把临时夹具当作业务数据。
+共享鉴权回归可用 `backend/scripts/prepare_auth_regression.py <全新临时目录>` 创建纯合成SQLite、两页PDF及两页预生成Word预览夹具；PDF第2页含合成文字/OCR风险，Word原始页1映射到渲染页2，可用于预览拆包回归。脚本拒绝覆盖已有目录，不包含密钥；密钥只在启动进程环境中设置。回归结束必须正常停止前后端，不得把临时夹具当作业务数据。
 
 隔离启动不能用空字符串覆盖AI配置，因为配置模块会继续读取本机 `.env`。必须同时设置非空测试Key和不可达的本机测试端点，例如 `DEEPSEEK_API_KEY=auth-regression-disabled`、`DEEPSEEK_BASE_URL=http://127.0.0.1:9`，确保Dashboard自动摘要不会调用真实模型。
 
@@ -83,11 +83,31 @@ npm run dev -- --host 127.0.0.1
 
 ## 每批最低验证
 
+文档预览拆分前后需运行静态边界、Word渲染页映射和风险定位聚焦回归：
+
+```powershell
+cd backend
+.\.venv\Scripts\python.exe -m pytest tests/test_frontend_preview_boundary.py tests/test_document_preview.py tests/test_risk_location.py -q
+```
+
+该命令只使用测试夹具，不调用WPS、OCR或DeepSeek；静态契约不能替代拆分完成后的PDF/Word浏览器视觉回归。
+
 ```powershell
 cd frontend
 npm run lint
 npm run build
 ```
+
+需要审计实际静态/动态入口时运行：
+
+```powershell
+cd frontend
+npm run build -- --manifest
+```
+
+检查 `frontend/dist/.vite/manifest.json` 的入口 `imports` 与 `dynamicImports`，并结合构建输出计算递归共享依赖。Dashboard是默认页面，不能把图表动态块误报为“首屏不会下载”；`dist` 是可再生构建产物，不纳入版本控制。
+
+修改ECharts注册模块后，构建通过不能替代浏览器回归。至少确认Dashboard存在4个ECharts实例/Canvas，最近7天切换30天后周期对比及两张趋势文案同步更新，1280px页面无横向溢出，并从重点关注项目穿透到对应分析页；控制台不得出现缺少series/component或无效React组件错误。
 
 ```powershell
 cd backend

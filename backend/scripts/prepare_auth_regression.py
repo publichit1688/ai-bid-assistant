@@ -12,10 +12,11 @@ if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
 
-def create_pdf(path, text):
+def create_pdf(path, *page_texts):
     document = fitz.open()
-    page = document.new_page()
-    page.insert_text((72, 72), text)
+    for text in page_texts:
+        page = document.new_page()
+        page.insert_text((72, 72), text)
     document.save(path)
     document.close()
 
@@ -51,24 +52,61 @@ def main():
     )
 
     pdf_path = upload_dir / "auth-sample.pdf"
-    create_pdf(pdf_path, "AUTH REGRESSION PDF PREVIEW")
+    create_pdf(
+        pdf_path,
+        "AUTH REGRESSION PDF PAGE 1",
+        "AUTH REGRESSION PDF RISK PAGE 2",
+    )
 
     word_path = upload_dir / "auth-word-sample.docx"
     word_path.write_bytes(b"synthetic-auth-regression-placeholder")
     create_pdf(
         upload_dir / "auth-word-sample.docx.preview.pdf",
-        "AUTH WORD PREVIEW",
+        "AUTH WORD PREVIEW PAGE 1",
+        "AUTH WORD RISK PAGE 2",
     )
 
-    analysis = json.dumps(
+    pdf_risks = [
+        {
+            "level": "高风险",
+            "deduction": 20,
+            "category": "合成资格条件",
+            "reason": "纯合成回归风险，用于验证Dashboard预警穿透。",
+            "suggestion": "仅用于本地自动化验证。",
+            "page": 2,
+            "quote": "AUTH REGRESSION PDF RISK PAGE 2",
+            "highlight_words": ["PDF RISK PAGE 2"],
+            "keywords": ["PDF RISK"],
+            "ocr_highlight_boxes": [
+                {"x": 0.1, "y": 0.08, "width": 0.48, "height": 0.05}
+            ],
+        }
+    ]
+    word_risks = [
+        {
+            "level": "中风险",
+            "deduction": 8,
+            "category": "合成Word页码",
+            "reason": "纯合成回归风险，用于验证Word渲染页映射。",
+            "suggestion": "仅用于本地自动化验证。",
+            "page": 1,
+            "quote": "AUTH WORD RISK PAGE 2",
+            "highlight_words": ["WORD RISK PAGE 2"],
+            "keywords": ["WORD RISK"],
+        }
+    ]
+
+    def analysis_for(risks):
+        return json.dumps(
         {
             "project_name": "Auth Regression",
             "tender_company": "Synthetic Test",
             "deadline": "N/A",
             "deposit": "N/A",
-            "risk": [],
-        }
-    )
+            "risk": risks,
+        },
+        ensure_ascii=False,
+        )
     Base.metadata.create_all(engine)
     session = SessionLocal()
     try:
@@ -76,8 +114,8 @@ def main():
                     filename=pdf_path.name,
                     filepath=str(pdf_path),
                     project_name="Auth PDF Project",
-                    analysis=analysis,
-                    risk="[]",
+                    analysis=analysis_for(pdf_risks),
+                    risk=json.dumps(pdf_risks, ensure_ascii=False),
                     status="analyzed",
                 )
         session.add_all(
@@ -87,8 +125,8 @@ def main():
                     filename=word_path.name,
                     filepath=str(word_path),
                     project_name="Auth Word Project",
-                    analysis=analysis,
-                    risk="[]",
+                    analysis=analysis_for(word_risks),
+                    risk=json.dumps(word_risks, ensure_ascii=False),
                     status="analyzed",
                 ),
             ]
@@ -105,14 +143,14 @@ def main():
         confirmed_source = SourceReference(
             bid_file_id=pdf_file.id,
             page=1,
-            quote="AUTH REGRESSION PDF PREVIEW",
+            quote="AUTH REGRESSION PDF PAGE 1",
             locator=json.dumps({"page": 1}),
             fingerprint="synthetic-confirmed-source",
         )
         suggested_source = SourceReference(
             bid_file_id=pdf_file.id,
             page=1,
-            quote="AUTH REGRESSION PDF PREVIEW",
+            quote="AUTH REGRESSION PDF PAGE 1",
             locator=json.dumps({"page": 1}),
             fingerprint="synthetic-suggested-source",
         )

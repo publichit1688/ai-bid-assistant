@@ -693,268 +693,268 @@ def get_dashboard(
 
                     created_date = None
 
-        # ==================================
-        # Dashboard V2.4
-        # 当前周期 / 上一周期统计
-        # ==================================
-
-        if created_date:
-
-            # ==============================
-            # 当前周期
-            # ==============================
-
-            if (
-                current_start
-                <= created_date
-                <= today
-            ):
-
-
-
-                current_period[
-                    "project_count"
-                ] += 1
-
-                current_period[
-                    "high_risk_count"
-                ] += summary[
-                    "high_count"
-                ]
-
-                current_period[
-                    "score_total"
-                ] += summary[
-                    "score"
-                ]
-
-
-            # ==============================
-            # 上一周期
-            # ==============================
-
-            elif (
-                previous_start
-                <= created_date
-                <= previous_end
-            ):
-
-                previous_period[
-                    "project_count"
-                ] += 1
-
-                previous_period[
-                    "high_risk_count"
-                ] += summary[
-                    "high_count"
-                ]
-
-                previous_period[
-                    "score_total"
-                ] += summary[
-                    "score"
-                ]
-
-
+            # ==================================
+            # Dashboard V2.4
+            # 当前周期 / 上一周期统计
+            # ==================================
 
             if created_date:
 
-                date_key = (
-                    created_date.strftime(
-                        "%Y-%m-%d"
-                    )
-                )
+                # ==============================
+                # 当前周期
+                # ==============================
+
+                if (
+                    current_start
+                    <= created_date
+                    <= today
+                ):
 
 
-                if date_key in trend_map:
 
-                    trend_map[date_key][
+                    current_period[
                         "project_count"
                     ] += 1
 
-
-                    trend_map[date_key][
-                        "risk_count"
-                    ] += summary[
-                        "risk_count"
-                    ]
-
-
-                    trend_map[date_key][
+                    current_period[
                         "high_risk_count"
                     ] += summary[
                         "high_count"
                     ]
 
-
-                    trend_map[date_key][
-                        "middle_risk_count"
-                    ] += summary[
-                        "middle_count"
-                    ]
-
-
-                    trend_map[date_key][
-                        "low_risk_count"
-                    ] += summary[
-                        "low_count"
-                    ]
-
-
-                    trend_map[date_key][
-                        "average_score_total"
+                    current_period[
+                        "score_total"
                     ] += summary[
                         "score"
                     ]
 
 
-                    trend_map[date_key][
-                        "average_score_count"
+                # ==============================
+                # 上一周期
+                # ==============================
+
+                elif (
+                    previous_start
+                    <= created_date
+                    <= previous_end
+                ):
+
+                    previous_period[
+                        "project_count"
+                    ] += 1
+
+                    previous_period[
+                        "high_risk_count"
+                    ] += summary[
+                        "high_count"
+                    ]
+
+                    previous_period[
+                        "score_total"
+                    ] += summary[
+                        "score"
+                    ]
+
+
+
+                if created_date:
+
+                    date_key = (
+                        created_date.strftime(
+                            "%Y-%m-%d"
+                        )
+                    )
+
+
+                    if date_key in trend_map:
+
+                        trend_map[date_key][
+                            "project_count"
+                        ] += 1
+
+
+                        trend_map[date_key][
+                            "risk_count"
+                        ] += summary[
+                            "risk_count"
+                        ]
+
+
+                        trend_map[date_key][
+                            "high_risk_count"
+                        ] += summary[
+                            "high_count"
+                        ]
+
+
+                        trend_map[date_key][
+                            "middle_risk_count"
+                        ] += summary[
+                            "middle_count"
+                        ]
+
+
+                        trend_map[date_key][
+                            "low_risk_count"
+                        ] += summary[
+                            "low_count"
+                        ]
+
+
+                        trend_map[date_key][
+                            "average_score_total"
+                        ] += summary[
+                            "score"
+                        ]
+
+
+                        trend_map[date_key][
+                            "average_score_count"
+                        ] += 1
+
+
+                # ==================================
+                # V2.1 风险等级分布统计
+                # ==================================
+
+                risk_distribution[
+                    "high"
+                ] += summary[
+                    "high_count"
+                ]
+
+
+                risk_distribution[
+                    "middle"
+                ] += summary[
+                    "middle_count"
+                ]
+
+
+                risk_distribution[
+                    "low"
+                ] += summary[
+                    "low_count"
+                ]
+
+
+                # ==================================
+                # V2.1 项目评分分布
+                # ==================================
+
+                current_score = summary[
+                    "score"
+                ]
+
+
+                if current_score < 40:
+
+                    score_distribution[
+                        "0_39"
                     ] += 1
 
 
-            # ==================================
-            # V2.1 风险等级分布统计
-            # ==================================
+                elif current_score < 60:
 
-            risk_distribution[
-                "high"
-            ] += summary[
-                "high_count"
-            ]
+                    score_distribution[
+                        "40_59"
+                    ] += 1
 
 
-            risk_distribution[
-                "middle"
-            ] += summary[
-                "middle_count"
-            ]
+                elif current_score < 80:
+
+                    score_distribution[
+                        "60_79"
+                    ] += 1
 
 
-            risk_distribution[
-                "low"
-            ] += summary[
-                "low_count"
-            ]
+                else:
+
+                    score_distribution[
+                        "80_100"
+                    ] += 1
 
 
-            # ==================================
-            # V2.1 项目评分分布
-            # ==================================
+                # ==================================
+                # 总风险 / 总评分
+                # ==================================
 
-            current_score = summary[
-                "score"
-            ]
-
-
-            if current_score < 40:
-
-                score_distribution[
-                    "0_39"
-                ] += 1
+                total_risks += summary[
+                    "risk_count"
+                ]
 
 
-            elif current_score < 60:
-
-                score_distribution[
-                    "40_59"
-                ] += 1
+                total_score += summary[
+                    "score"
+                ]
 
 
-            elif current_score < 80:
+                # ==================================
+                # 加入全部项目列表
+                # ==================================
 
-                score_distribution[
-                    "60_79"
-                ] += 1
+                all_projects.append({
 
+                    "id":
+                        item.id,
 
-            else:
+                    "filename":
+                        item.filename,
 
-                score_distribution[
-                    "80_100"
-                ] += 1
+                    "project_name":
+                        item.project_name
+                        or
+                        item.filename,
 
+                    "score":
+                        summary["score"],
 
-            # ==================================
-            # 总风险 / 总评分
-            # ==================================
+                    "score_level":
+                        summary[
+                            "score_level"
+                        ],
 
-            total_risks += summary[
-                "risk_count"
-            ]
+                    "risk_count":
+                        summary[
+                            "risk_count"
+                        ],
 
+                    "high_count":
+                        summary[
+                            "high_count"
+                        ],
 
-            total_score += summary[
-                "score"
-            ]
+                    "middle_count":
+                        summary[
+                            "middle_count"
+                        ],
 
+                    "low_count":
+                        summary[
+                            "low_count"
+                        ],
 
-            # ==================================
-            # 加入全部项目列表
-            # ==================================
+                    "total_deduction":
+                        summary[
+                            "total_deduction"
+                        ],
 
-            all_projects.append({
+                    "status":
+                        item.status,
 
-                "id":
-                    item.id,
-
-                "filename":
-                    item.filename,
-
-                "project_name":
-                    item.project_name
-                    or
-                    item.filename,
-
-                "score":
-                    summary["score"],
-
-                "score_level":
-                    summary[
-                        "score_level"
-                    ],
-
-                "risk_count":
-                    summary[
-                        "risk_count"
-                    ],
-
-                "high_count":
-                    summary[
-                        "high_count"
-                    ],
-
-                "middle_count":
-                    summary[
-                        "middle_count"
-                    ],
-
-                "low_count":
-                    summary[
-                        "low_count"
-                    ],
-
-                "total_deduction":
-                    summary[
-                        "total_deduction"
-                    ],
-
-                "status":
-                    item.status,
-
-                "created_time":
-                    (
-                        str(
-                            item.created_time
+                    "created_time":
+                        (
+                            str(
+                                item.created_time
+                            )
+                            if item.created_time
+                            else ""
                         )
-                        if item.created_time
-                        else ""
-                    )
 
-            })
+                })
 
 
-        # ==================================
+            # ==================================
         # 平均评分
         # ==================================
 

@@ -16,7 +16,7 @@ def test_release_version_is_consistent(isolated_app):
     )
 
     assert VERSION_FILE == project_root / "VERSION"
-    assert APP_VERSION == "1.5.0"
+    assert APP_VERSION == "1.5.1-rc.1"
     assert isolated_app["app"].version == APP_VERSION
     assert package["version"] == APP_VERSION
     assert lock["version"] == APP_VERSION

@@ -1,12 +1,12 @@
 # 当前活动任务
 
-更新时间：2026-09-04
+更新时间：2026-09-05
 
 ## 当前批次
 
-P5-09：将已签署候选提升为正式 `1.5.0`。
+P6-09：将P6维护成果统一提升为 `1.5.1-rc.1` 并建立本地维护候选提交。
 
-状态：已完成。经项目负责人授权，版本已统一为正式 `1.5.0`，完整发布门禁通过，并建立本地正式发布提交和 `v1.5.0` 标签；提交哈希以本批Git结果为准。不推送、不部署。
+状态：已完成。根版本、FastAPI及前端包/锁文件统一为 `1.5.1-rc.1`，完整候选门禁通过，P6维护成果作为单一本地候选提交落库；真实配置、数据库、上传、报告、授权样本、依赖及构建产物均排除。未创建标签、推送或部署，既有 `v1.5.0` 标签保持不变。
 
 ## 已完成
 
@@ -41,7 +41,7 @@ P5-09：将已签署候选提升为正式 `1.5.0`。
 
 ## 下一批唯一目标
 
-完成正式发布门禁、本地发布提交和 `v1.5.0` 标签后停止；推送和部署仍需项目负责人另行授权。
+P6-10等待项目负责人验收并签署 `1.5.1-rc.1` 候选。未经另行明确授权，不提升正式版本、不创建标签、不推送、不部署。
 
 ## 已知限制
 
@@ -52,6 +52,78 @@ P5-09：将已签署候选提升为正式 `1.5.0`。
 - Git工作区存在旧入口删除及大量未跟踪成果，发布前必须建立正式版本基线。
 
 ## 本批验证
+
+- P6-09将根版本、FastAPI版本契约和前端包/锁文件统一为 `1.5.1-rc.1`，并按授权复跑统一候选门禁。
+- 候选提交仅包含P6维护源码、测试、审计文档和版本同步文件；真实配置、数据库、上传、报告、真实样本、依赖和构建产物继续排除。
+- 本批只创建一个本地候选提交；没有创建或移动标签，没有推送或部署。最终提交哈希以Git历史及本次交付报告为准。
+
+- P6-08从仓库根目录运行统一发布门禁：Python编译、完整pytest、秘密扫描、Python依赖审计、前端lint/build及npm生产依赖审计全部通过。
+- 完整后端回归177 passed、1 skipped、1个既有Starlette/httpx弃用警告；跳过项仍为当前Windows无符号链接权限。
+- Python与前端生产依赖均为0个已知漏洞；秘密扫描通过；前端构建保留585.56 kB图表块提醒，没有提高警告阈值。
+- 暂存区为空；审计时11个已跟踪修改、6个未跟踪源码/文档，加上新审计文档后形成18个未来候选文件。
+- Git忽略边界确认真实 `.env`、`bid.db`、上传、报告、真实样本、`node_modules` 和 `dist` 被排除；跟踪范围只存在安全模板 `.env.example`。
+- `v1.5.0` 为annotated tag：标签对象 `8095a315...` 解引用后仍指向HEAD `a4295e60...`；根/后端/前端版本契约保持 `1.5.0`。
+- 原子提交与 `git revert` 回滚建议已记录在 `docs/P6_MAINTENANCE_CANDIDATE_AUDIT.md`；本批未暂存、提交、推送、打标签或部署。
+
+- P6-07将 `DashboardChart` 从 `echarts-for-react` 完整入口改为其ESM core，并通过 `echarts/core` 注册Bar、Line、Pie、Grid、Legend、Tooltip、LabelLayout和CanvasRenderer；四处option及Dashboard状态仍留在 `App`。
+- 首次使用CommonJS `lib/core` 时，生产构建通过但Vite开发页出现“Element type is invalid”空白页；浏览器回归捕获后立即改为包内ESM core并重新验证，没有带错进入后续任务。
+- 最终Dashboard图表块由1136.66 kB（gzip377.43 kB）降至585.56 kB（gzip198.59 kB），分别减少551.10 kB（48.5%）和178.84 kB（47.4%）。
+- 默认Dashboard正常首次JS由约2062.78 kB（gzip673.61 kB）降至约1511.68 kB（gzip494.77 kB）；入口、工作台和文档预览块保持原体积。
+- 隔离浏览器确认4个ECharts实例/Canvas正常，1280px页面无横向溢出；切换最近30天后周期比较和两张趋势文案同步更新，4个图表实例仍存在。
+- 重点关注项目可穿透到两页PDF分析页并显示1项风险；页面切换后Dashboard图表正常卸载，浏览器控制台0错误0警告。
+- 最终前端lint与manifest构建通过；品牌/拆包和核心接口聚焦回归13 passed、1个既有Starlette/httpx弃用警告。隔离AI使用非真实Key与不可达本机地址，未连接真实DeepSeek。
+
+- P6-06使用 `vite build --manifest` 核对真实构建图：入口明确动态引用 `WorkbenchPage`、`DashboardChart` 和 `DocumentPreview`，没有退化为静态导入。
+- 首屏静态JS约926.12 kB（gzip296.18 kB）；默认Dashboard立即增加1136.66 kB（gzip377.43 kB）的图表块，正常首次进入合计约2062.78 kB（gzip673.61 kB，不含CSS）。
+- 智能编标工作台仅增加9.32 kB（gzip3.23 kB），共享Ant Design块已在入口加载；文档预览只在打开PDF/Word后增加约347.78 kB（gzip103.99 kB，含极小浏览器兼容动态块）。
+- 依赖源码确认 `echarts-for-react` 默认入口执行 `import * as echarts from 'echarts'`，当前图表实际只使用pie、line、bar以及tooltip、legend、grid、xAxis、yAxis，完整ECharts入口是剩余大块的明确来源。
+- 审计结论：继续拆工作台或预览收益低且增加回归风险；把Dashboard再包一层也不会减少默认首屏下载。下一批只评估ECharts模块化引入，不提高警告阈值、不改Dashboard功能。
+- 前端生产manifest构建通过；聚焦静态契约与前端lint在本批收尾门禁中复验。
+
+- P6-05第三小批使用独立SQLite、上传和报告目录，以及两页合成PDF和两页预生成Word预览PDF；未访问用户数据库/上传文件，未调用WPS、百度OCR或DeepSeek。
+- PDF异步预览显示2页，上一页/下一页边界正常；风险点击定位第2页，文字层出现高风险高亮，合成OCR框按10%/8%/48%/5%归一化坐标覆盖。
+- Word版式预览显示2页及本机办公软件来源；风险原始页为第1页，`risk_page_map`正确跳转渲染第2页并出现中风险文字高亮。
+- 首次浏览器测量发现懒加载竞态导致495px容器内画布仍按700px渲染；将 `ResizeObserver` 与宽度状态移入实际挂载的 `DocumentPreview` 后，复测画布宽度等于495px且页面无横向溢出。
+- 快速切换文档时 `react-pdf` 记录一条 `AbortException: TextLayer task cancelled`；依赖源码确认这是卸载进行中文字层任务的取消提示，最终Word页码与高亮正常。未修改第三方依赖、未关闭文字层，作为已知非功能性告警保留。
+- 完整后端回归177 passed、1 skipped、1个既有Starlette/httpx弃用警告；跳过项仍为当前Windows无符号链接权限。前端lint/build通过。
+- 最新构建主入口345.92 kB（gzip107.59 kB），文档预览347.68 kB（gzip103.88 kB），Card共享块460.94 kB（gzip150.10 kB），Dashboard/ECharts块1136.66 kB（gzip377.43 kB）；保留大chunk提醒供P6-06审计。
+
+- P6-05第二小批新增懒加载 `DocumentPreview`，入口仅在存在URL、兼容页或错误时请求预览组件；`react-pdf`和worker初始化已移入组件。
+- Blob获取与对象URL回收、Word rendered/text分支、`risk_page_map`、页码/宽度状态、风险点击和文字高亮调度继续留在 `App`，没有扩大拆分范围。
+- 前端lint/build通过；主入口由1269.76 kB（gzip393.76 kB）降至346.23 kB（gzip107.71 kB），预览chunk为347.44 kB（gzip103.79 kB），Card共享chunk为460.94 kB（gzip150.10 kB）。
+- 预览边界、Word渲染页映射和风险定位聚焦回归16 passed、1个既有Starlette/httpx弃用警告。
+- 本批未启动业务服务或浏览器，未调用WPS、百度OCR、DeepSeek，也未访问用户数据库和上传文件。
+
+- P6-05第一小批新增 `test_frontend_preview_boundary.py`，6项契约锁定PDF worker/Blob生命周期、700px响应式上限、文字与注释层、翻页边界、Word rendered/text分支、风险映射和OCR叠框。
+- 前端边界、后端Word预览及风险定位聚焦回归16 passed、1个既有Starlette/httpx弃用警告。
+- 前端lint/build通过；构建产物保持主入口1269.76 kB、Dashboard/ECharts异步块1136.65 kB、工作台块9.25 kB，仍有大chunk提醒。
+- 本批只新增测试和审计文档，未启动浏览器或业务服务，未调用WPS、百度OCR、DeepSeek，也未访问用户数据库和上传文件。
+
+- P6-04第二小批在独立SQLite、上传和报告目录运行：Dashboard创建4个ECharts实例，累计2个项目/1项高风险，7天切换30天后周期文案和统计同步更新。
+- 重点关注列表的 `Auth PDF Project` 可穿透到标书分析页，PDF显示第1/1页，风险检查器展开并显示1项合成高风险、20分扣分及第1页定位；浏览器控制台0错误0警告。
+- 首轮隔离页面暴露Dashboard只统计最后一条项目：项目中心为1项风险而Dashboard为0。已修复聚合块缩进并新增双项目回归，修复后接口和页面均为1项。
+- Python编译通过；完整后端回归171 passed、1 skipped、1个既有Starlette/httpx弃用警告，跳过项仍为当前Windows无符号链接权限。
+- 前端lint/build通过；主入口1269.76 kB、Dashboard/ECharts异步块1136.65 kB、工作台块9.25 kB，保留大chunk提醒。
+- AI使用非空测试Key并固定到不可达 `127.0.0.1:9`，未连接真实DeepSeek；测试页面及8015/5185服务已关闭，隔离数据待最终安全清理。
+
+- P6-04第一小批前端lint/build通过；主入口由约2412.47 kB（gzip 773.02 kB）降至1269.76 kB（gzip 393.76 kB），ECharts生成1136.65 kB（gzip 377.43 kB）异步chunk，工作台chunk保持9.25 kB。
+- Dashboard图表懒加载契约聚焦回归5 passed、1个既有Starlette/httpx弃用警告；锁定入口不再静态导入ECharts、4处option仍由原Dashboard状态生成。
+- 本批没有启动业务服务、调用DeepSeek、访问用户数据库或移动 `v1.5.0` 标签；Dashboard交互浏览器回归留待P6-04第二小批。
+
+- P6-03第二小批使用全新合成环境完成浏览器回归：工作台异步入口及未选项目空状态正常；PDF项目显示修订、目录、评分点和操作入口；Word项目形成隔离空工作台。
+- AI目录确认提示展示“发送当前文件并消耗额度”，测试点击取消；新增章节、评分点映射和新增材料弹窗均正常打开并取消，没有执行真实业务写入。
+- 浏览器控制台0错误0警告；Dashboard初始化AI使用非真实测试Key并固定到不可达 `127.0.0.1:9`，安全返回502，未连接真实DeepSeek。
+- 临时浏览器页面、后端8012和前端5182服务均已关闭；合成数据目录清理后复核端口与工作区。
+
+- P6-03第一小批前端lint/build通过；生成独立 `WorkbenchPage` chunk 9.25 kB（gzip 3.20 kB），主包由2421.34 kB降至2412.47 kB（gzip 773.02 kB）。
+- 工作台懒加载与props契约聚焦回归4 passed、1个既有Starlette/httpx弃用警告；首次lint发现搬迁后残留的 `ReloadOutlined` 导入，移除后复跑通过。
+- 浏览器交互回归留待P6-03第二小批，未以构建通过代替最终页面验收。
+
+- P6-02只读审计确认 `App.jsx` 9733行、约232 kB，生产主包约2421.34 kB、gzip约774.99 kB；入口静态依赖Ant Design、ECharts和react-pdf。
+- 拆包顺序与禁止项已写入 `docs/FRONTEND_BUNDLE_AUDIT.md`；本批不改Vite配置或运行代码，使用现有P6-01 lint/build结果作为构建基线。
+
+- P6-01前端 `npm run lint` 和 `npm run build` 通过；项目中心弃用列表已不再进入生产包，构建主包由约2.46 MB降至约2.42 MB，仍保留大包提醒。
+- 新增项目中心列表契约测试，锁定不再导入/渲染Ant Design `List`，并保留列表、列表项及空状态语义。
 
 - 正式 `1.5.0` 完整发布门禁通过：Python编译通过；后端167 passed、1 skipped、1个既有弃用警告；秘密扫描通过；Python依赖审计0个已知漏洞；前端lint/build通过；npm生产依赖审计0个已知漏洞。
 - 前端构建保留既有约2.46 MB主包拆分提醒；跳过项仍为当前Windows无符号链接权限，均不阻塞正式版本。

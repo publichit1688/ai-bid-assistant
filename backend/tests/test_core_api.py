@@ -162,3 +162,43 @@ def test_score_contract_matches_list_detail_and_dashboard(client, isolated_app):
     }
     assert {field: detail[field] for field in contract_fields} == expected
     assert {field: dashboard_item[field] for field in contract_fields} == expected
+
+
+def test_dashboard_aggregates_every_project_not_only_the_last(client, isolated_app):
+    from app.models import BidFile
+
+    session = isolated_app["session_factory"]()
+    try:
+        session.add_all(
+            [
+                BidFile(
+                    filename="first.pdf",
+                    filepath="uploads/first.pdf",
+                    project_name="高风险项目",
+                    risk=json.dumps(
+                        [{"level": "高风险", "deduction": 20}],
+                        ensure_ascii=False,
+                    ),
+                    status="completed",
+                ),
+                BidFile(
+                    filename="second.pdf",
+                    filepath="uploads/second.pdf",
+                    project_name="无风险项目",
+                    risk="[]",
+                    status="completed",
+                ),
+            ]
+        )
+        session.commit()
+    finally:
+        session.close()
+
+    dashboard = client.get("/api/dashboard?days=7").json()
+
+    assert dashboard["total_projects"] == 2
+    assert dashboard["total_risks"] == 1
+    assert dashboard["risk_distribution"] == {"high": 1, "middle": 0, "low": 0}
+    assert len(dashboard["recent_projects"]) == 2
+    assert len(dashboard["attention_projects"]) == 1
+    assert dashboard["attention_projects"][0]["project_name"] == "高风险项目"
