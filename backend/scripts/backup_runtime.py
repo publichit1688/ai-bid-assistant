@@ -32,13 +32,18 @@ def resolve_sqlite_path(database_url):
     return Path(url.database).resolve()
 
 
-def copy_data_tree(source, destination):
+def validate_data_tree(source):
     source = Path(source).resolve()
     if not source.is_dir():
         raise FileNotFoundError(f"备份源目录不存在: {source.name}")
     for path in source.rglob("*"):
         if path.is_symlink():
             raise ValueError(f"备份源包含符号链接，已拒绝: {path.name}")
+    return source
+
+
+def copy_data_tree(source, destination):
+    source = validate_data_tree(source)
     shutil.copytree(source, destination)
 
 
@@ -64,6 +69,12 @@ def create_backup(destination, database_url, upload_dir, report_dir):
     database_path = resolve_sqlite_path(database_url)
     if not database_path.is_file():
         raise FileNotFoundError("SQLite 数据库文件不存在。")
+
+    # Validate every source before creating the snapshot root. This keeps a
+    # rejected backup atomic even when Windows cannot immediately remove a
+    # partially created directory.
+    validate_data_tree(upload_dir)
+    validate_data_tree(report_dir)
 
     destination.mkdir(parents=True)
     try:

@@ -1,12 +1,12 @@
 # 当前活动任务
 
-更新时间：2026-09-06
+更新时间：2026-09-08
 
 ## 当前批次
 
-P6-15：将 `main` 和 `v1.5.1` 推送到已配置的GitHub仓库。
+P6-17：`1.5.2-rc.1` 备份原子性维护候选。
 
-状态：已完成。经项目负责人授权，远程 `main` 已快进到 `f30d618`，远程 annotated 标签 `v1.5.1` 已建立并解引用到正式发布提交 `b542d01`；远程哈希复核与本地一致。未部署。
+状态：已完成。经项目负责人授权，备份原子性修复已统一提升为 `1.5.2-rc.1`；完整候选门禁通过，候选审计已固化，并建立一个本地候选提交。已发布 `v1.5.1` 标签不变，本批不创建标签、不推送、不部署。
 
 ## 已完成
 
@@ -41,7 +41,7 @@ P6-15：将 `main` 和 `v1.5.1` 推送到已配置的GitHub仓库。
 
 ## 下一批唯一目标
 
-P6-16保持正式 `1.5.1` 发布冻结。真实部署必须由项目负责人另行明确授权，并提供目标服务器、域名、证书和持久化目录；未授权前不执行。
+对最终 `1.5.2-rc.1` 候选提交执行只读身份、差异和数据排除边界复核，形成待项目负责人确认的验收签署单。未经另行确认不签署、不提升正式版、不创建标签、不推送或部署。
 
 ## 已知限制
 
@@ -52,6 +52,37 @@ P6-16保持正式 `1.5.1` 发布冻结。真实部署必须由项目负责人另
 - Git工作区存在旧入口删除及大量未跟踪成果，发布前必须建立正式版本基线。
 
 ## 本批验证
+
+- 腾讯云 COS 已开通，临时桶位于 `ap-chongqing`，访问权限为私有读写、单 AZ，当前文件数为 1；唯一对象为已验证 Git 官方安装包，未开启 CDN、自定义域名、版本控制、日志存储或其他付费附加功能。
+- 用户开启 Chrome 本地文件访问权限后，文件选择器成功上传安装包；COS 页面显示“任务已完成（已成功 1 个）”、共 1 个文件，大小 62.32 MB，访问权限继承桶的私有读写策略。
+- 项目负责人已明确确认执行 COS 中转的 Git 安装；自动化助手执行 ID `inv-k8e34g0636` 状态为命令成功，开始时间 22:20:17、结束时间 22:20:50、耗时 33 秒、ExitCode 0。
+- 输出依次包含 `DOWNLOAD_GIT_FROM_COS`、`GIT_SHA256_OK`、`GIT_SIGNATURE_OK`、`git version 2.55.0.windows.5` 和 `GIT_INSTALL_OK`，证明下载、哈希、签名、安装和版本检查完整通过。
+- 安装参数包含 `/NORESTART`，本批未主动重启。
+- 项目负责人另行确认删除临时 COS 对象和空桶；对象删除后文件列表显示“共 0 个文件 / 暂无数据”，空桶删除并刷新后存储桶列表显示“共 0 项”，原桶名称不再出现。
+- 直接打开已删除 `.exe` 对象地址被浏览器客户端下载策略拦截，未作为 404 证据；清理完成以腾讯云 COS 控制台的资源列表为权威证据。
+- 云端只读预检首次执行 `inv-m8e3g9ggm6` 因 GitHub 连接重置以 ExitCode 1 结束；失败前确认 Git 2.55.0 可用、应用目录和数据目录均不存在、C 盘可用 76.68 GB，且未创建任何目录。
+- 修复命令仅增加 OpenSSL、HTTP/1.1 与 4 次有限重试；复跑 `inv-k8e3mtg1f9` 用时 3 秒、ExitCode 0，第一轮远程读取即成功并输出 `DEPLOY_PREFLIGHT_OK`。
+- 远程 `v1.5.1` annotated 标签对象为 `cf3aa454939812714bb377391a960459f90269b3`，解引用提交为 `b542d010d2679c0265fcd4cd50cd420fcd39954e`，与正式发布记录一致；远程 `main` 已前进到 `5cca7ad6...`，后续部署只固定标签，不跟随 `main`。
+- 固定版本检出执行 `inv-k8e3t3gkdd` 状态为命令成功，开始时间 22:44:23、结束时间 22:44:47、耗时 24 秒、ExitCode 0。
+- 输出确认 `CHECKOUT_HEAD b542d010...`、`CHECKOUT_TAG v1.5.1`、`CHECKOUT_VERSION 1.5.1`、`CHECKOUT_WORKTREE_CLEAN`、`DATA_ROOT_NOT_CREATED` 与 `CHECKOUT_V151_OK`；未创建生产数据目录或启动进程。
+- Git 的 detached HEAD 提示来自按 annotated 发布标签检出，属于不可漂移的预期部署状态；后续更新必须显式选择版本标签，不在服务器上直接提交。
+- 云端依赖命令固定应用 HEAD 为 `b542d010...`，并以 Git 工作树及两份依赖清单相对 HEAD 无差异作为 Windows 兼容的防篡改门禁；原始字节 SHA-256 因 Git CRLF 换行转换已停用。
+- 依赖安装首次执行 `inv-k8e4580ep2` 在下载前因 `requirements.txt hash mismatch` 以 ExitCode 1 安全退出；修正后执行 `inv-m8e4ahgquk` 完成后端依赖安装和秘密扫描，云端 pytest 为 177 passed、1 failed、2 warnings。
+- 云端唯一失败为 `test_backup_refuses_overwrite_and_symlinks`：符号链接拒绝生效，但目标目录仍存在。本地已将两个文件源的校验前置到目标创建前；聚焦回归 1 passed、1 skipped，完整回归 177 passed、1 skipped、1 warning。
+- 后端清单目前是带上下界的兼容版本区间而非完全哈希锁定；前端由 `npm ci` 严格使用锁文件。命令不会创建 `.env` 或 `C:\AI-Bid-Data`，不会启动应用或调用 DeepSeek/OCR。
+- 本机官方安装包 `Git-2.55.0.5-64-bit.exe` 大小65,343,712字节，SHA-256为 `D065A4E23C3D9A6B5073D609B5BE0830227EC3CA053C083BA385061DDFAF94C6`；Authenticode状态为Valid，签名证书指纹为 `2A1E97CBF0DFCDA15B0DA0AC9745014F989D4AD0`。
+- 腾讯云 Git 单组件命令首次执行 `inv-k8de5mgbc2` 因 `CRYPT_E_REVOCATION_OFFLINE` 退出；加入 `--ssl-no-revoke` 后 `inv-k8de8v0pr2` 因连接重置退出；加入HTTP/1.1和全错误重试后 `inv-k8debe0tii` 已进入官方CDN但约15–20 KB/s，最终按1200秒命令上限标记为超时。三次均未到达哈希、签名或安装阶段。
+- 超时后只读预检于2026-09-08 10:53:35以ExitCode 0结束：Git为 `NOT_INSTALLED`，WPS已知路径不存在；随后路径诊断再次确认 `C:\Windows\py.exe` 可定位Python 3.14.6，`C:\Program Files\nodejs\node.exe` 为v24.18.0，`npm.cmd` 为11.16.0。
+- 本批未安装 Git/WPS、未重启服务器、未上传应用或用户数据、未创建生产密钥，也未调用 DeepSeek/OCR；仅按授权创建临时 COS 桶并上传已验证的 Git 官方安装包。
+- 腾讯云自动化助手首次运行环境命令 `inv-m8cwbw04rf` 在下载 Git for Windows 官方 GitHub 发布包时30分钟超时，安装阶段未开始。
+- 分步命令 `inv-m8dd3a009e` 成功下载 Python/Node 官方安装包，两个 Authenticode 签名有效且 Python SHA-256 与官方值一致；Python和Node安装器均返回成功，脚本因预期 Python 路径不存在而以 ExitCode 1结束。
+- 安装后只读预检 `inv-m8dd63gqra` 与路径诊断 `inv-m8dd7tggs7` 均 ExitCode 0：`py` 注册 Python 3.14.6，实际解释器为 `C:\Program\python.exe`；Node为 `v24.18.0`，npm为 `11.16.0`。
+- 本批未安装Git/WPS、未重启服务器、未创建生产密钥、未调用DeepSeek/OCR，也未上传数据库、标书或报告。
+
+- P6-16从 `backend` 使用既有 `.venv` 运行部署模板、生产启动、运行检查、备份和恢复聚焦回归：17 passed、1 skipped；跳过项仍为当前Windows无符号链接权限，保留1个既有Starlette/httpx弃用提示。
+- 前端 `npm run build` 通过，正式版本为 `1.5.1`；Dashboard图表块仍为585.56 kB，保留已审计提醒。
+- 秘密扫描和差异格式检查通过；测试只使用隔离临时目录并已清理，未读取真实 `.env`、用户数据库、上传文件或报告。
+- 本批没有连接真实服务器、注册Windows/Linux服务、修改Nginx、调用DeepSeek/OCR或执行部署。
 
 - P6-15推送前确认远程 `main=82f3383` 是本地 `main=f30d618` 的历史祖先，远程不存在 `v1.5.1`，满足安全快进和无标签冲突条件。
 - Windows Schannel首次在读取GitHub回包时出现 `SEC_E_MESSAGE_ALTERED`；改为单次命令使用OpenSSL后推送成功，没有永久修改Git SSL配置。
