@@ -117,6 +117,30 @@ def test_compare_report_matches_page_project_fields(client):
     assert "-24 分" in text
 
 
+def test_risk_report_prefers_rendered_page_mapping(client):
+    payload = {
+        "project_name": "Word映射项目",
+        "risk": [
+            {
+                "level": "中风险",
+                "page": 1,
+                "report_page": 2,
+                "keyword": "渲染页",
+                "reason": "页码映射",
+                "suggestion": "核对预览",
+                "deduction": 8,
+            }
+        ],
+    }
+
+    response = client.post("/api/report", json=payload)
+
+    assert response.status_code == 200
+    text = document_text(response.content)
+    assert "第2页" in text
+    assert "第1页" not in text
+
+
 def test_reports_open_with_missing_fields(client):
     risk_response = client.post("/api/report", json={})
     compare_response = client.post("/api/compare-report", json={})

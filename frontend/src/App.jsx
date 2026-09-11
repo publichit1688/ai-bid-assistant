@@ -547,7 +547,12 @@ const res=await apiClient.post(
 
 {
     ...(result || {}),
-    risk:risks,
+    risk:risks.map((risk,index)=>({
+        ...risk,
+        report_page:
+            Number(wordPreviewRiskPages[String(index)])
+            || risk.page
+    })),
     score:score,
     score_level:scoreLevel,
     high_count:highCount,

@@ -1,5 +1,7 @@
 # 开发与回归测试
 
+腾讯云受控入口合成回归证据与覆盖限制见 [P6-31C合成回归](docs/P6_31C_SYNTHETIC_REGRESSION.md)。预生成Word预览只能验收展示与页映射，不能替代真实DOC/DOCX转换；报告下载成功也不等于内容/版式验收。
+
 ## 环境准备
 
 要求：Python 3.11+、Node.js 20+；DOC/DOCX 版式预览需要 Microsoft Word 或 WPS Office。默认顺序是 Microsoft Word 主用、WPS 备用；非标准安装位置可在 `.env` 中用 `MICROSOFT_WORD_PATH` 或 `WPS_OFFICE_PATH` 指向对应可执行文件。不要把真实 Key 写入命令、截图或提交记录。
@@ -243,6 +245,14 @@ cd backend
 - 修改后至少执行 `npm run lint` 和 `npm run build`。
 
 Windows 公共 Temp 曾出现 pytest 目录权限拒绝，因此 `backend/pytest.ini` 已将临时根固定为已忽略的 `backend/.pytest-tmp/`，并关闭非必要的 pytest 缓存写入。
+
+若该目录仍被旧进程锁定，使用一次性、明确命名的目录重跑并在结束后清理：
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q --basetemp .pytest-manual-<日期>
+```
+
+不要把 `--basetemp` 指向用户数据库、上传目录、报告目录或仓库外的宽泛路径。
 
 ## V1 核心回归清单
 

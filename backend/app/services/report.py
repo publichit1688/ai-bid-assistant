@@ -243,9 +243,8 @@ def create_report(data):
         )
 
 
-        row[1].text = (
-            f"第{risk.get('page','')}页"
-        )
+        report_page = risk.get("report_page") or risk.get("page", "")
+        row[1].text = f"第{report_page}页"
 
 
         row[2].text = (
