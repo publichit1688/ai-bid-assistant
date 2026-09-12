@@ -305,3 +305,6 @@ npm audit --omit=dev --audit-level=low
 ## 最近一次 V1 UI 回归
 
 2026-08-29 已完成 P0-06，浏览器和接口证据记录在 `docs/V1_UI_REGRESSION.md`。完整 AI 对比和当前 Dashboard 指纹缓存命中因会产生真实模型调用而未执行；这两项不伪造通过，将分别在 P1-03/P1-05 使用可控替身验证。
+# 生产 API 地址回归
+
+从 `frontend` 目录运行 `node --test scripts/test-api-base.mjs`，验证生产缺省同源、开发回环和显式配置优先。部署后须新开页面确认项目列表实际加载成功；健康接口200或旧页面内容不足以证明新前端API地址正确。
