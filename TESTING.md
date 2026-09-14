@@ -1,5 +1,22 @@
 # 开发与回归测试
 
+## 合成预览尺寸回归（2026-09-14）
+
+本地Word/PDF双侧栏展开已验证1024/1280/1440/1920宽度，Word额外验证1024侧栏组合；详细像素记录见合成回归文档。PDF折叠组合仍待补齐。预生成Word PDF不代表真实转换成功。
+
+从backend运行 ` .\.venv\Scripts\python.exe -m pytest tests/test_frontend_preview_boundary.py tests/test_document_preview.py tests/test_report_contract.py -q --basetemp=.pytest-layout-20260914`：14 passed、1 warning。未来复跑使用新的独立basetemp，保留既有夹具和数据。
+
+## 非JSON响应降级回归（2026-09-14）
+
+- 在frontend运行 `node --test scripts/test-response-validation.mjs scripts/test-api-base.mjs`：7项通过，覆盖合法空列表、非法列表/行、HTML响应、Dashboard对象、生产/开发API基址。
+- `npm run preview -- --host 127.0.0.1 --port 4174 --strictPort` 不带后端时，Vite可能将 `/api/files` 回退到200 HTML。页面应显示项目/Dashboard读取失败而非白屏；此模式只用于错误降级和布局测试，不用于正常数据验收。
+- 本批Chrome1024/1280标题栏本地复验通过，上次空白阻塞已解除；后续继续隔离合成内容回归，不将空数据测试当完整响应式矩阵。
+
+## 标题栏响应式补验（2026-09-14）
+
+- 检查中央区域实际宽度及双侧栏展开/单侧折叠/双侧折叠组合；主标题不被挤成多行裁切，凭据按钮可点击，紧凑导航具备中文可访问名称和悬停提示。
+- 本地执行 `npm run lint`、`npm run build` 通过；构建大chunk提示仍在。静态预览首页及入口JS HTTP 200，不等于页面渲染通过：本批两个浏览器空白，须先查明原因再复验，不将预览空白归因于本补丁或网络而无证据。
+
 腾讯云受控入口合成回归证据与覆盖限制见 [P6-31C合成回归](docs/P6_31C_SYNTHETIC_REGRESSION.md)。预生成Word预览只能验收展示与页映射，不能替代真实DOC/DOCX转换；报告下载成功也不等于内容/版式验收。
 
 ## 环境准备

@@ -50,6 +50,56 @@ textarea {
   background: #f3f6fa;
 }
 
+/* Sidebars determine the usable header width, not just the viewport. */
+.app-main-layout {
+  container-type: inline-size;
+  container-name: app-main;
+}
+
+.app-header {
+  min-height: 72px;
+  height: auto !important;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  padding-block: 8px !important;
+  line-height: normal;
+}
+
+.app-brand,
+.app-brand > div:first-child {
+  flex-shrink: 0;
+}
+
+.app-brand-copy {
+  white-space: nowrap;
+}
+
+.app-header-actions {
+  flex-wrap: wrap;
+  min-width: 0;
+  row-gap: 8px;
+}
+
+@container app-main (max-width: 780px) {
+  .app-header {
+    padding-inline: 12px !important;
+  }
+
+  .app-brand-subtitle,
+  .app-nav-label {
+    display: none;
+  }
+
+  .app-brand-title {
+    font-size: 16px !important;
+  }
+
+  .app-nav .ant-btn {
+    width: 38px;
+    padding-inline: 0 !important;
+  }
+}
+
 .app-content-inner {
   width: 100%;
   max-width: 1440px;

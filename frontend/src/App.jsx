@@ -1,4 +1,5 @@
 import "./pdf-highlight.css";
+import { requireObjectResponse, requireProjectFiles } from "./responseValidation";
 
 import {
   DashboardOutlined,
@@ -662,7 +663,7 @@ const res=await apiClient.get(
 
 setFiles(
 
-res.data
+requireProjectFiles(res.data)
 
 );
 
@@ -709,8 +710,10 @@ async function loadDashboard(){
        );
 
         // ======================
-        // 保存Dashboard数据
+        // 保存Dashboard数据（先拒绝静态托管返回的HTML等非对象内容）
         // ======================
+
+        requireObjectResponse(res.data);
 
         setDashboard(
             res.data
@@ -4002,7 +4005,7 @@ height:"100vh"
         <div className="app-brand-copy">
 
             <div
-                className="app-brand-subtitle"
+                className="app-brand-title"
                 style={{
                     fontSize:20,
                     fontWeight:700,
@@ -4015,6 +4018,7 @@ height:"100vh"
             </div>
 
             <div
+                className="app-brand-subtitle"
                 style={{
                     marginTop:3,
                     fontSize:12,
@@ -4034,7 +4038,7 @@ height:"100vh"
         右侧：导航
     ============================== */}
 
-    <div style={{display:"flex",alignItems:"center",gap:10}}>
+    <div className="app-header-actions" style={{display:"flex",alignItems:"center",gap:10}}>
     <Button
         onClick={()=>{
             setCredentialError("");
@@ -4058,6 +4062,8 @@ height:"100vh"
 
         <Button
             type="text"
+            aria-label="管理驾驶舱"
+            title="管理驾驶舱"
             onClick={()=>{
                 setShowDashboard(true);
                 setShowWorkbench(false);
@@ -4092,6 +4098,8 @@ height:"100vh"
 
         <Button
             type="text"
+            aria-label="标书分析"
+            title="标书分析"
             onClick={()=>{
                 setShowDashboard(false);
                 setShowWorkbench(false);
@@ -4125,6 +4133,8 @@ height:"100vh"
 
         <Button
             type="text"
+            aria-label="智能编标"
+            title="智能编标"
             onClick={()=>{
                 setShowDashboard(false);
                 setShowWorkbench(true);
