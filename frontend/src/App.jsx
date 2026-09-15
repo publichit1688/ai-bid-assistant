@@ -441,6 +441,9 @@ const [
 // AI摘要缓存
 // ======================
 
+const aiSummaryRequestRef = useRef(0);
+const dashboardRequestRef = useRef(0);
+const aiSummaryPendingRef = useRef(false);
 const aiSummaryCacheRef =
     useRef({});
 
@@ -695,6 +698,12 @@ message.error(
 
 async function loadDashboard(){
 
+    const dashboardRequestId = ++dashboardRequestRef.current;
+    // Invalidate an in-flight summary when its statistics are refreshed.
+    aiSummaryRequestRef.current += 1;
+    aiSummaryPendingRef.current = false;
+    setAiManagementLoading(false);
+    setAiManagementSummary(null);
     setDashboardLoading(true);
     setDashboardError("");
 
@@ -713,6 +722,9 @@ async function loadDashboard(){
         // 保存Dashboard数据（先拒绝静态托管返回的HTML等非对象内容）
         // ======================
 
+        if(dashboardRequestId !== dashboardRequestRef.current){
+            return;
+        }
         requireObjectResponse(res.data);
 
         setDashboard(
@@ -724,9 +736,11 @@ async function loadDashboard(){
         // V2.5 AI管理摘要
         // ======================
 
-        await loadAiManagementSummary(
-            res.data
-        );
+        // Reading statistics must never start an AI request. Only reuse this
+        // page's matching cache; server-side cache lookup remains manual too.
+        setAiManagementSummary(aiSummaryCacheRef.current[
+            createDashboardFingerprint(res.data, trendDays)
+        ] || null);
 
 
 
@@ -738,6 +752,9 @@ async function loadDashboard(){
     }
 
     catch{
+        if(dashboardRequestId !== dashboardRequestRef.current){
+            return;
+        }
         setAiManagementSummary(null);
 
         setDashboardError(
@@ -752,7 +769,9 @@ async function loadDashboard(){
 
     finally{
 
-        setDashboardLoading(false);
+        if(dashboardRequestId === dashboardRequestRef.current){
+            setDashboardLoading(false);
+        }
 
     }
 
@@ -808,7 +827,7 @@ async function loadAiManagementSummary(
     dashboardData
 ){
 
-    if(!dashboardData){
+    if(!dashboardData || dashboardLoading || dashboardError || aiManagementLoading || aiSummaryPendingRef.current){
         return;
     }
 
@@ -846,6 +865,8 @@ async function loadAiManagementSummary(
 
 
     setAiManagementLoading(true);
+    aiSummaryPendingRef.current = true;
+    const requestId = ++aiSummaryRequestRef.current;
 
 
     try{
@@ -882,6 +903,10 @@ async function loadAiManagementSummary(
 
         );
 
+
+        if(requestId !== aiSummaryRequestRef.current){
+            return;
+        }
 
         if(
             res.data
@@ -931,12 +956,18 @@ async function loadAiManagementSummary(
     }
 
     catch{
-        setAiManagementSummary(null);
+        if(requestId === aiSummaryRequestRef.current){
+            setAiManagementSummary(null);
+            message.error("AI 管理摘要生成失败，请稍后点击重试。");
+        }
     }
 
     finally{
 
-        setAiManagementLoading(false);
+        if(requestId === aiSummaryRequestRef.current){
+            aiSummaryPendingRef.current = false;
+            setAiManagementLoading(false);
+        }
 
     }
 
@@ -5260,6 +5291,16 @@ AI 管理预警
         }}
     >
 
+        <Button
+            type="primary"
+            loading={aiManagementLoading}
+            disabled={!dashboard || dashboardLoading || Boolean(dashboardError)}
+            onClick={() => loadAiManagementSummary(dashboard)}
+            style={{ marginBottom: 16 }}
+        >
+            生成 AI 管理摘要
+        </Button>
+
         {
             aiManagementLoading
             ?
@@ -5511,7 +5552,7 @@ AI 管理预警
                             fontSize:13
                         }}
                     >
-                        完成项目分析后，系统将自动生成管理判断
+                        点击“生成 AI 管理摘要”后才请求 AI；相同数据优先复用缓存。
                     </div>
 
                 </div>

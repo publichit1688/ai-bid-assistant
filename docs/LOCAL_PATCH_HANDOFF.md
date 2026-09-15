@@ -1,5 +1,31 @@
 # 本地补丁交付检查（2026-09-14）
 
+## 当前交付候选：手动摘要及验收工具（2026-09-15，已授权本地提交）
+
+负责人已明确授权以下11文件本地提交，不修改版本、不创建标签、不推送、不部署；本记录随补丁保存，最终提交身份以Git日志及执行回执为准。以下此前的候选/等待措辞均为提交前说明，不扩大授权范围。
+
+基线68888a8，版本1.5.2。审阅修复统计请求乱序覆盖：最新请求独占数据、错误和loading更新；新增测试先失败后通过。当前19项Node测试、lint/build通过；前批Chrome手动摘要合成验收通过，本批新增乱序路径仅通过模拟接口测试，不扩大为线上验收。
+
+候选共11文件，包含自68888a8以来尚未提交的部署状态记录与本地验收文档；不是仅本批差异，提交前须重新核对：
+
+1. frontend/src/App.jsx
+2. frontend/scripts/test-manual-summary.mjs
+3. frontend/scripts/preview-manual-summary.mjs
+4. frontend/scripts/check-deployed-entry.mjs
+5. frontend/scripts/test-deployed-entry.mjs
+6. docs/PROJECT_STATE.md
+7. docs/ACTIVE_TASK.md
+8. docs/LOCAL_PATCH_HANDOFF.md
+9. TASKS.md
+10. TESTING.md
+11. CHANGELOG.md
+
+排除并保留：所有backend/.browser-*、backend/.pytest-*、数据库/上传/报告、.env、dist、所有bundle、deploy/windows/deploy-8f130f9.ps1及deploy-68888a8.ps1。旧固定提交部署脚本不可用于此新补丁。不得git add .；取得新的本地提交授权后才按清单暂存，不推送、不打标签、不部署。以下为历史补丁交付记录。
+
+## 最新执行结果
+
+本地11文件提交为68888a8；用户随后明确授权腾讯云部署，执行inv-s8n00m0mqh成功。云端固定68888a8、版本1.5.2，备份/测试/构建/健康及办公电脑HTTPS检查通过，详细证据见PROJECT_STATE.md。未推送或打标签。本批部署记录、固定脚本和增量bundle未纳入原提交；下方为提交时交付边界，不再将“未部署”历史描述当当前状态。
+
 审阅基线：8f130f9。负责人已授权将以下11文件保存为本地补丁提交，本记录随该提交保存；实际提交ID及成功状态以Git日志和执行回执为准。版本仍为1.5.2，未授权推送或部署。
 
 ## 应用补丁范围

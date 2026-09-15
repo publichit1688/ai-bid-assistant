@@ -1,5 +1,34 @@
 # 开发与回归测试
 
+## 统计请求乱序回归（2026-09-15）
+
+手动摘要套件新增2项：旧统计请求先完成时不得解除新请求loading；新请求完成后旧成功/失败不得覆盖数据或错误。新增用例在修复前失败，dashboardRequestRef修复后通过。执行四个test-*.mjs套件共19 passed，lint/build通过；此为模拟接口时序验证，不是浏览器网络延迟实测或云端验收。
+
+## 手动摘要浏览器合成夹具（2026-09-15）
+
+frontend目录运行 `node scripts/preview-manual-summary.mjs`，访问 `http://127.0.0.1:5175`。仅回环；不启动FastAPI，不读取数据库或调用外部模型。GET `/fixture-status`只返回摘要请求计数。首次手动POST延迟2秒返回502，用于重试验收；第二次及之后返回固定合成摘要。其他API拒绝，不用于PDF/Word或业务验收。
+
+实测Chrome：冷启动计数0、首次按钮loading及失败提示、重试成功、再次点击不增请求、30天清空/返回7天恢复缓存，最终计数2；页面按钮/提示可见。测试结束停止该进程；该夹具不得用于部署。17项Node测试、lint/build通过，完整尺寸及真实Word验收不在本批范围。
+
+## 手动AI管理摘要（2026-09-15，本地未部署）
+
+frontend目录执行 `node --test scripts/test-manual-summary.mjs scripts/test-api-base.mjs scripts/test-response-validation.mjs scripts/test-deployed-entry.mjs`：17项通过。新增5项通过vm执行App.jsx真实处理函数，模拟API，无网络/真实模型调用；验证首次加载及刷新零摘要POST、手动生成/缓存、重复点击及迟到响应、失败重试、统计不可用保护。另运行lint/build通过，既有大chunk提示保留。
+
+后续隔离浏览器验收：首次加载和7/30天切换只有统计读取，不应有/dashboard/ai-summary请求；点击生成才发出请求，生成中显示加载状态，相同指纹复用缓存，失败允许重试，切换周期不显示旧结果。仅使用合成数据及模拟/禁用外部模型，不打开正式页替代本地验收；此批未完成浏览器视觉检查。
+
+## 终端只读部署检查（2026-09-15）
+
+在frontend目录运行（Node使用项目现有安装）：
+
+```powershell
+node --test scripts/test-deployed-entry.mjs scripts/test-response-validation.mjs scripts/test-api-base.mjs
+node scripts/check-deployed-entry.mjs https://172-30-0-5.tailb5cf3d.ts.net /assets/index-DtzCARX0.js
+```
+
+第二条资源名绑定68888a8部署证据，今后仅按新部署已核实的资源名调整，不通过自动接受当前资源绕过版本检查。退出0及ok=true代表首页/固定JS/历史JSON检查通过，不证明页面布局或服务端Git提交。失败退出1，仅输出通用失败提示，不输出服务端正文、项目名或凭据；请先查连通性和部署记录，不关闭证书验证。每次请求30秒超时，禁止重定向；不访问Dashboard/分析/导出接口，不生成文件、不修改服务器。此工具无需API Key，适用于已鉴权的受控同源入口。
+
+本批实测ok=true、entryAsset=/assets/index-DtzCARX0.js、projectCount=2；12项Node测试通过，前端lint/build通过（既有大chunk警告）。UI/真实Word/完整版式验收继续保留。
+
 ## 合成预览尺寸回归（2026-09-14）
 
 本地Word/PDF双侧栏展开已验证1024/1280/1440/1920宽度，Word额外验证1024侧栏组合；详细像素记录见合成回归文档。PDF折叠组合仍待补齐。预生成Word PDF不代表真实转换成功。
