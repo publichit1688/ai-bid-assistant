@@ -1,4 +1,5 @@
 import "./pdf-highlight.css";
+import { resolveRiskPreviewPage } from "./riskPreviewPage";
 import { requireObjectResponse, requireProjectFiles } from "./responseValidation";
 
 import {
@@ -9022,11 +9023,7 @@ onClick={startAnalyze}
                     key={index}
                     onClick={()=>{
 
-                        const mappedPage = Number(wordPreviewRiskPages[String(index)]);
-                        const requestedPage = mappedPage || Number(item.page) || 1;
-                        const targetPage = numPages > 0
-                            ? Math.min(Math.max(requestedPage, 1), numPages)
-                            : Math.max(requestedPage, 1);
+                        const targetPage = resolveRiskPreviewPage(item, index, wordPreviewRiskPages, numPages);
 
                         setActiveRisk(item);
 
@@ -9151,7 +9148,7 @@ onClick={startAnalyze}
                                 flexShrink:0
                             }}
                         >
-                            第 {item.page ?? "-"} 页
+                            第 {resolveRiskPreviewPage(item, index, wordPreviewRiskPages, numPages)} 页
                         </span>
 
                     </div>

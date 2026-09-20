@@ -1,5 +1,15 @@
 # 开发与回归测试
 
+## 页码隔离UI复验（2026-09-20）
+
+在frontend目录运行 `node scripts/preview-risk-pages.mjs`，仅127.0.0.1:5176，依赖已保留的backend/.browser-layout-20260914/uploads两份合成PDF，无真实后端。非GET拒绝。Word原1映射2的列表/定位/详情及PDF原2回归均经Chrome验证通过。23项测试及lint/build通过；临时服务与标签页已关闭。该脚本不用于正式部署，缺少合成文件时会直接启动失败。
+
+## Word风险渲染页码回归（2026-09-20）
+
+- 运行 `node --test frontend/scripts/test-risk-preview-page.mjs`；4项覆盖共用解析器接线、原始1/映射2、PDF回退、非法页码与边界。连同既有4个Node测试脚本共23项通过。
+- `npm --prefix frontend run lint`、`npm --prefix frontend run build`通过；既有大chunk警告保留。
+- 待隔离浏览器补验：Word列表在点击前显示第2页，点击后预览/详情均第2页；PDF无映射仍用原页。不要在正式环境直接部署未提交成果，不调用AI。
+
 ## 统计请求乱序回归（2026-09-15）
 
 手动摘要套件新增2项：旧统计请求先完成时不得解除新请求loading；新请求完成后旧成功/失败不得覆盖数据或错误。新增用例在修复前失败，dashboardRequestRef修复后通过。执行四个test-*.mjs套件共19 passed，lint/build通过；此为模拟接口时序验证，不是浏览器网络延迟实测或云端验收。
