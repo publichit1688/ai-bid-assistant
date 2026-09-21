@@ -222,102 +222,6 @@ useEffect(()=>{
     return ()=>window.removeEventListener("app-auth-required", showCredentialPrompt);
 },[]);
 
-function highlightKeyword(words,level){
-
-
-if(!words || words.length===0){
-
-return;
-
-}
-
-
-// 清除旧高亮
-
-document
-.querySelectorAll(
-".highlight-high,.highlight-middle,.highlight-low"
-)
-.forEach(el=>{
-
-el.classList.remove(
-"highlight-high",
-"highlight-middle",
-"highlight-low"
-);
-
-});
-
-
-
-setTimeout(()=>{
-
-
-const spans =
-document.querySelectorAll(
-".react-pdf__Page__textContent span"
-);
-
-
-
-let className="highlight-low";
-
-
-
-if(level?.includes("高")){
-
-className="highlight-high";
-
-}
-else if(level?.includes("中")){
-
-className="highlight-middle";
-
-}
-
-
-
-
-spans.forEach(span=>{
-
-
-const text =
-span.innerText.trim();
-
-
-
-words.forEach(word=>{
-
-
-if(
-
-word &&
-
-text.includes(word)
-
-){
-
-
-span.classList.add(
-className
-);
-
-
-}
-
-
-});
-
-
-});
-
-
-
-},1200);
-
-
-
-}
 
 const [files,setFiles]=useState([]);
 
@@ -7876,6 +7780,7 @@ onClick={startAnalyze}
         <Suspense fallback={<LoadingState text="正在加载文档预览..." />}>
             <DocumentPreview
                 activeRisk={activeRisk}
+                activeRiskPreviewPage={activeRiskPreviewPage}
                 docxPreviewPages={docxPreviewPages}
                 numPages={numPages}
                 onDocumentLoad={(pdf)=>setNumPages(pdf.numPages)}
@@ -9033,15 +8938,6 @@ onClick={startAnalyze}
                             targetPage
                         );
 
-                        // 等 PDF 渲染后高亮
-                        setTimeout(()=>{
-
-                            highlightKeyword(
-                                item.highlight_words,
-                                item.level
-                            );
-
-                        },1200);
 
                     }}
                     style={{

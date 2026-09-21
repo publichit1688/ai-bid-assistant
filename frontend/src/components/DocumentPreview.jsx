@@ -13,10 +13,12 @@ import {
     pdfjs
 } from "react-pdf";
 import {
+    useCallback,
     useEffect,
     useRef,
     useState
 } from "react";
+import { applyPreviewTextHighlight } from "../previewTextHighlight";
 
 
 pdfjs.GlobalWorkerOptions.workerSrc =
@@ -59,6 +61,7 @@ function getOcrHighlightClass(level){
 
 export default function DocumentPreview({
     activeRisk,
+    activeRiskPreviewPage,
     docxPreviewPages,
     numPages,
     onDocumentLoad,
@@ -72,6 +75,10 @@ export default function DocumentPreview({
 }){
     const pdfContainerRef = useRef(null);
     const [pdfPageWidth, setPdfPageWidth] = useState(700);
+    const refreshTextHighlight = useCallback(()=>{
+        applyPreviewTextHighlight(pdfContainerRef.current, activeRisk, pageNumber, activeRiskPreviewPage);
+    },[activeRisk, pageNumber, activeRiskPreviewPage]);
+    useEffect(refreshTextHighlight,[refreshTextHighlight]);
 
     useEffect(()=>{
         const container = pdfContainerRef.current;
@@ -169,6 +176,7 @@ export default function DocumentPreview({
                                                 <Page
                                                     pageNumber={pageNumber}
                                                     renderTextLayer={true}
+                                                    onRenderTextLayerSuccess={refreshTextHighlight}
                                                     renderAnnotationLayer={true}
                                                     width={pdfPageWidth}
                                                 />

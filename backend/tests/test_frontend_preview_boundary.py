@@ -10,6 +10,9 @@ PREVIEW_SOURCE = (
 PREVIEW_CSS = (FRONTEND_ROOT / "src" / "pdf-highlight.css").read_text(
     encoding="utf-8"
 )
+RISK_PAGE_SOURCE = (FRONTEND_ROOT / "src" / "riskPreviewPage.js").read_text(
+    encoding="utf-8"
+)
 LAYOUT_CSS = (FRONTEND_ROOT / "src" / "index.css").read_text(encoding="utf-8")
 
 
@@ -65,11 +68,14 @@ def test_word_rendered_preview_and_legacy_fallback_remain_distinct():
 
 def test_risk_navigation_preserves_word_page_mapping_and_text_highlight():
     assert 'Number(wordPreviewRiskPages[String(index)])' in APP_SOURCE
-    assert "Math.min(Math.max(requestedPage, 1), numPages)" in APP_SOURCE
+    assert 'from "./riskPreviewPage"' in APP_SOURCE
+    assert "Math.min(page, limit)" in RISK_PAGE_SOURCE
+    assert "Number.isInteger(page) && page > 0" in RISK_PAGE_SOURCE
     assert "setActiveRiskPreviewPage(targetPage)" in APP_SOURCE
     assert "setPageNumber(" in APP_SOURCE
-    assert "highlightKeyword(" in APP_SOURCE
-    assert 'document.querySelectorAll(\n".react-pdf__Page__textContent span"' in APP_SOURCE
+    assert "activeRiskPreviewPage={activeRiskPreviewPage}" in APP_SOURCE
+    assert "onRenderTextLayerSuccess={refreshTextHighlight}" in PREVIEW_SOURCE
+    assert "useEffect(refreshTextHighlight,[refreshTextHighlight])" in PREVIEW_SOURCE
 
 
 def test_ocr_boxes_remain_normalized_and_bound_to_the_active_page():

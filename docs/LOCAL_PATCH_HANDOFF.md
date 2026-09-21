@@ -1,5 +1,38 @@
 # 本地补丁交付检查（2026-09-14）
 
+## 2026-09-22 当前12文件已获本地提交授权
+
+负责人明确授权下列当前清单12文件的本地补丁提交。提交前29项Node、秘密扫描、格式检查通过；最终身份以Git回执为准。本记录随该补丁保存，提交后停止；不修改版本、不创建标签、不推送、不部署。下方等待授权及未提交表述为提交前历史，后续同步/部署需对应明确授权。
+
+## 当前候选：缩放后风险高亮保持（2026-09-21）
+
+本节取代下方历史候选。基线为 `4cc85ed5be1e583977fc4fbbedcc2391c6ae9dce`，版本1.5.2。本次尚未提交、推送或部署；历史10/11文件授权不作为本次新补丁提交授权。
+
+本次候选12文件（增加只读入口诊断及测试；历史10文件清单不再覆盖全部修改）：
+
+1. frontend/src/App.jsx：移除双重点击定时器，传入活动风险渲染页码。
+2. frontend/src/components/DocumentPreview.jsx：文本层完成回调与风险变化后重施高亮。
+3. frontend/src/previewTextHighlight.js：容器内清除/匹配、目标页限制及风险等级。
+4. frontend/scripts/test-preview-text-highlight.mjs：3项高亮重建、清除和接线回归。
+5. backend/tests/test_frontend_preview_boundary.py：更新高亮及此前页码解析器过时断言；包含已存在的未提交测试修正。
+6. docs/PROJECT_STATE.md
+7. docs/ACTIVE_TASK.md
+8. docs/LOCAL_PATCH_HANDOFF.md
+9. TASKS.md
+10. CHANGELOG.md
+11. frontend/scripts/check-deployed-entry.mjs：只读检查的固定阶段与脱敏失败码。
+12. frontend/scripts/test-deployed-entry.mjs：阶段归因、超时及敏感错误脱敏测试。
+
+文档包含基线以来累计部署、回归与验收记录，不只是本轮文字。排除并保留所有数据库、上传/报告、.env、backend/.browser-*、backend/.pytest-*、dist、Git bundle及固定旧提交部署脚本；禁止git add .。
+
+审阅：仅对当前PDF容器的文本节点增删固定CSS类，不写innerHTML，不改OCR框、后端业务或原始risk.page。Word使用映射后的目标页。保留逐span包含关键词匹配限制，不扩大为跨span引用识别。
+
+验证：上一批26项Node、lint/build、后端预览契约6项通过；本批Chrome合成1280×800验证PDF四侧栏组合及2→1→2高亮1→0→1、PDF切Word旧高亮清除、Word映射第2页及2→1→2、右折叠/双折叠保持；Word左折叠沿用上一批截图证据。截图与DOM检查无横向溢出。未代表真实Office转换或线上修复验收。
+
+2026-09-22新增诊断审阅完成：修复响应流清理异常掩盖原读取超时，先红后绿回归确认HOME:TIMEOUT保留；29项Node（入口8项）及lint通过。10个已跟踪修改及2个新增高亮文件对应上述12文件，暂存为空；本批未重复业务build或浏览器验收。
+
+下一步等待负责人对上述12文件本地提交的明确授权；不改版本、不创建标签、不推送、不部署。后续部署对应新提交另行执行。
+
 ## 2026-09-20 页码补丁本地提交授权
 
 负责人已明确授权LOCAL_PATCH_HANDOFF.md当前清单10文件的本地补丁提交，版本保持1.5.2。本记录随补丁保存，最终提交身份及成功状态以Git日志和执行回执为准；下方等待授权为历史记录。提交后停止，不创建标签、不推送、不部署。保留全部数据、夹具、旧部署脚本及bundle，不纳入本次提交；线上6427d83尚未包含本修复，后续同步或部署需对应明确授权。
