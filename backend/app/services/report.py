@@ -182,7 +182,8 @@ def create_report(data):
     # ======================
 
     procurement_items = data.get("procurement_requirements", [])
-    if isinstance(procurement_items, list) and procurement_items:
+    has_procurement_section = isinstance(procurement_items, list) and bool(procurement_items)
+    if has_procurement_section:
         doc.add_heading("五、采购清单摘要", level=2)
         for item in procurement_items:
             content = format_procurement_item(item)
@@ -191,12 +192,12 @@ def create_report(data):
 
 
     # ======================
-    # 六、风险明细表
+    # 可选采购清单之后，剩余章节保持连续编号
     # ======================
 
 
     doc.add_heading(
-        "六、风险明细",
+        "六、风险明细" if has_procurement_section else "五、风险明细",
         level=2
     )
 
@@ -264,12 +265,12 @@ def create_report(data):
 
 
     # ======================
-    # 六、原文依据
+    # 原文依据
     # ======================
 
 
     doc.add_heading(
-        "六、风险原文依据",
+        "七、风险原文依据" if has_procurement_section else "六、风险原文依据",
         level=2
     )
 
@@ -292,12 +293,12 @@ def create_report(data):
 
 
     # ======================
-    # 七、AI建议
+    # AI建议
     # ======================
 
 
     doc.add_heading(
-        "七、AI投标建议",
+        "八、AI投标建议" if has_procurement_section else "七、AI投标建议",
         level=2
     )
 

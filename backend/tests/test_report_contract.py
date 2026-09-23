@@ -1,6 +1,7 @@
 from io import BytesIO
 
 from docx import Document
+import pytest
 
 
 def document_text(content):
@@ -149,3 +150,21 @@ def test_reports_open_with_missing_fields(client):
     assert compare_response.status_code == 200
     assert "项目名称：未找到" in document_text(risk_response.content)
     assert "未命名项目" in document_text(compare_response.content)
+
+
+@pytest.mark.parametrize("procurement", [None, [], "invalid", [{"item_name": "合成设备"}]])
+def test_risk_report_section_numbers_are_contiguous(client, procurement):
+    payload = risk_report_payload()
+    if procurement is None:
+        payload.pop("procurement_requirements")
+    else:
+        payload["procurement_requirements"] = procurement
+    response = client.post("/api/report", json=payload)
+    assert response.status_code == 200
+    document = Document(BytesIO(response.content))
+    headings = [p.text for p in document.paragraphs if p.style.name == "Heading 2"]
+    titles = ["项目基本信息", "投标风险评估", "技术要求摘要", "商务资格要求"]
+    if isinstance(procurement, list) and procurement:
+        titles.append("采购清单摘要")
+    titles.extend(["风险明细", "风险原文依据", "AI投标建议"])
+    assert headings == [f"{number}、{title}" for number, title in zip("一二三四五六七八", titles)]
